@@ -7,12 +7,15 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ProjectEntity } from '../projects/project.entity';
 import { UserEntity } from '../users/user.entity';
 import { TaskAssignmentEntity } from './task-assignment.entity';
 import { NoteEntity } from '../notes/note.entity';
 
+@Index('idx_tasks_project_status', ['project_id', 'status'])
+@Index('idx_tasks_project_parent', ['project_id', 'parent_task_id'])
 @Entity({ schema: 'inplanner', name: 'tasks' })
 export class TaskEntity {
   @PrimaryGeneratedColumn()

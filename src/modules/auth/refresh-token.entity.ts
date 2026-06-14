@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { UserEntity } from '../users/user.entity';
 
@@ -16,6 +17,7 @@ export class RefreshTokenEntity {
   @Column({ length: 255 })
   token: string;
 
+  @Index()
   @Column()
   user_id: number;
 

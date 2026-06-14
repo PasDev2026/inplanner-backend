@@ -14,8 +14,8 @@ export class QueryTaskDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  @Max(100)
+  @Min(0)
+  @Max(1000)
   limit?: number = 20;
 
   @ApiProperty({ example: 'Diseñar', description: 'Texto de búsqueda por nombre', required: false })

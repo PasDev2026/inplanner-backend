@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { TaskEntity } from '../tasks/task.entity';
 import { UserEntity } from '../users/user.entity';
@@ -21,6 +22,7 @@ export class NoteEntity {
   @Column()
   task_id: number;
 
+  @Index()
   @Column()
   created_by_id: number;
 

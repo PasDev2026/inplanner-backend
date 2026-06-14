@@ -67,7 +67,7 @@ export class ProjectsService {
       skip,
       take: limit,
       order,
-      relations: { responsibles: true },
+      relations: { responsibles: { user: true } },
     });
 
     return {
@@ -82,7 +82,7 @@ export class ProjectsService {
   }
 
   async findOne(id: number): Promise<ProjectEntity> {
-    const project = await this.projectRepository.findOne({ where: { id_project: id }, relations: { responsibles: true } });
+    const project = await this.projectRepository.findOne({ where: { id_project: id }, relations: { responsibles: { user: true } } });
     if (!project) {
       throw new NotFoundException(`Proyecto con ID ${id} no encontrado`);
     }
@@ -90,9 +90,8 @@ export class ProjectsService {
   }
 
   async update(id: number, dto: UpdateProjectDto): Promise<ProjectEntity> {
-    const project = await this.findOne(id);
-    Object.assign(project, dto);
-    return this.projectRepository.save(project);
+    await this.projectRepository.update(id, dto as any);
+    return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {

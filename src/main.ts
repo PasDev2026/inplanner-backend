@@ -30,7 +30,7 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)), new BigIntInterceptor(), new TransformInterceptor());
+  app.useGlobalInterceptors(new BigIntInterceptor(), new TransformInterceptor(), new ClassSerializerInterceptor(app.get(Reflector)));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Inplanner API')

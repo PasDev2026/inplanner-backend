@@ -25,6 +25,7 @@ export class UserEntity {
   @Column({ length: 255 })
   password: string;
 
+  @Exclude()
   @Column({ length: 100, unique: true })
   email: string;
 
@@ -37,28 +38,36 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   apellido_materno: string;
 
+  @Exclude()
   @Column({ length: 20, unique: true })
   dni: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string;
 
+  @Exclude()
   @Column({ default: true })
   estado: boolean;
 
+  @Exclude()
   @CreateDateColumn()
   created_at: Date;
 
+  @Exclude()
   @UpdateDateColumn()
   updated_at: Date;
 
+  @Exclude()
   @ManyToOne(() => AreaEntity)
   @JoinColumn({ name: 'area_id' })
   area: AreaEntity;
 
+  @Exclude()
   @OneToMany(() => UserSedeEntity, (us) => us.user)
   userSedes: UserSedeEntity[];
 
+  @Exclude()
   @OneToMany(() => UserRoleEntity, (ur) => ur.user)
   userRoles: UserRoleEntity[];
 }

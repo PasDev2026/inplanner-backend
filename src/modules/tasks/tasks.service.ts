@@ -29,7 +29,8 @@ export class TasksService {
 
   async findAll(query: QueryTaskDto): Promise<PaginatedResult<TaskEntity>> {
     const { page = 1, limit = 20, search, project_id, status, priority } = query;
-    const skip = (page - 1) * limit;
+    const take = limit > 0 ? limit : undefined;
+    const skip = limit > 0 ? (page - 1) * limit : 0;
 
     const where: FindOptionsWhere<TaskEntity> = {};
 
@@ -50,7 +51,7 @@ export class TasksService {
       where,
       relations: { assignments: { user: true } },
       skip,
-      take: limit,
+      take,
       order: { id_task: 'ASC' },
     });
 
@@ -91,9 +92,8 @@ export class TasksService {
   }
 
   async update(id: number, dto: UpdateTaskDto): Promise<TaskEntity> {
-    const task = await this.findOne(id);
-    Object.assign(task, dto);
-    return this.taskRepository.save(task);
+    await this.taskRepository.update(id, dto as any);
+    return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
