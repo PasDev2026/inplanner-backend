@@ -57,7 +57,7 @@ export class TaskEntity {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => ProjectEntity, p => p.tasks)
+  @ManyToOne(() => ProjectEntity, (p) => p.tasks)
   @JoinColumn({ name: 'project_id' })
   project: ProjectEntity;
 
@@ -73,13 +73,13 @@ export class TaskEntity {
   @JoinColumn({ name: 'completed_by_id' })
   completedBy: UserEntity;
 
-  @OneToMany(() => TaskAssignmentEntity, ta => ta.task)
+  @OneToMany(() => TaskAssignmentEntity, (ta) => ta.task)
   assignments: TaskAssignmentEntity[];
 
-  @OneToMany(() => NoteEntity, n => n.task)
+  @OneToMany(() => NoteEntity, (n) => n.task)
   notes: NoteEntity[];
 
-  @OneToMany(() => TaskEntity, t => t.parentTask)
+  @OneToMany(() => TaskEntity, (t) => t.parentTask)
   children: TaskEntity[];
 
   subtasks_count?: number;

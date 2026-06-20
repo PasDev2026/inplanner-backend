@@ -1,4 +1,4 @@
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -25,7 +25,7 @@ export class UserEntity {
   @Column({ length: 255 })
   password: string;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @Column({ length: 100, unique: true })
   email: string;
 
@@ -38,36 +38,36 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   apellido_materno: string;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @Column({ length: 20, unique: true })
   dni: string;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @Column({ default: true })
   estado: boolean;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @CreateDateColumn()
   created_at: Date;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @ManyToOne(() => AreaEntity)
   @JoinColumn({ name: 'area_id' })
   area: AreaEntity;
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @OneToMany(() => UserSedeEntity, (us) => us.user)
   userSedes: UserSedeEntity[];
 
-  @Exclude()
+  @Expose({ groups: ['user-detail'] })
   @OneToMany(() => UserRoleEntity, (ur) => ur.user)
   userRoles: UserRoleEntity[];
 }

@@ -10,7 +10,7 @@ export class TaskAssignmentEntity {
   @PrimaryColumn()
   user_id: number;
 
-  @ManyToOne(() => TaskEntity, t => t.assignments)
+  @ManyToOne(() => TaskEntity, (t) => t.assignments)
   @JoinColumn({ name: 'task_id' })
   task: TaskEntity;
 

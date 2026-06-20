@@ -88,14 +88,13 @@ export class SocketService {
   }
 
   async forceLogout(userId: number, message: string): Promise<boolean> {
-    await this.refreshTokenRepository.update(
-      { user_id: userId, revoked: false },
-      { revoked: true },
-    ).catch((err) => {
-      this.logger.warn(
-        `Error revocando tokens del usuario ${userId}: ${err.message}`,
-      );
-    });
+    await this.refreshTokenRepository
+      .update({ user_id: userId, revoked: false }, { revoked: true })
+      .catch((err: Error) => {
+        this.logger.warn(
+          `Error revocando tokens del usuario ${userId}: ${err.message}`,
+        );
+      });
 
     const userSockets = this.activeUsers.get(userId);
     if (!userSockets || userSockets.size === 0) return false;

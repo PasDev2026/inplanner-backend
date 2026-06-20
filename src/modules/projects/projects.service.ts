@@ -1,6 +1,17 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsWhere, ILike, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsWhere,
+  ILike,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { ProjectResponsibleEntity } from './project-responsible.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -19,12 +30,27 @@ export class ProjectsService {
   ) {}
 
   async create(dto: CreateProjectDto): Promise<ProjectEntity> {
-    const project = this.projectRepository.create(dto as any) as unknown as ProjectEntity;
+    const project = new ProjectEntity();
+    Object.assign(project, dto);
     return this.projectRepository.save(project);
   }
 
-  async findAll(query: QueryProjectDto): Promise<PaginatedResult<ProjectEntity>> {
-    const { page = 1, limit = 20, search, status, priority, sede_id, manager_id, dateFrom, dateTo, sortBy, sortOrder } = query;
+  async findAll(
+    query: QueryProjectDto,
+  ): Promise<PaginatedResult<ProjectEntity>> {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      status,
+      priority,
+      sede_id,
+      manager_id,
+      dateFrom,
+      dateTo,
+      sortBy,
+      sortOrder,
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<ProjectEntity> = {};
@@ -52,7 +78,18 @@ export class ProjectsService {
       where.start_date = LessThanOrEqual(new Date(dateTo));
     }
 
-    const SORTABLE_FIELDS = ['name_project', 'status', 'priority', 'start_date', 'due_date', 'created_at', 'updated_at', 'manager_id', 'sede_id', 'id_project'] as const;
+    const SORTABLE_FIELDS = [
+      'name_project',
+      'status',
+      'priority',
+      'start_date',
+      'due_date',
+      'created_at',
+      'updated_at',
+      'manager_id',
+      'sede_id',
+      'id_project',
+    ] as const;
     type SortableField = (typeof SORTABLE_FIELDS)[number];
 
     const order: Record<string, 'ASC' | 'DESC'> = {};
@@ -82,7 +119,10 @@ export class ProjectsService {
   }
 
   async findOne(id: number): Promise<ProjectEntity> {
-    const project = await this.projectRepository.findOne({ where: { id_project: id }, relations: { responsibles: { user: true } } });
+    const project = await this.projectRepository.findOne({
+      where: { id_project: id },
+      relations: { responsibles: { user: true } },
+    });
     if (!project) {
       throw new NotFoundException(`Proyecto con ID ${id} no encontrado`);
     }
@@ -90,7 +130,7 @@ export class ProjectsService {
   }
 
   async update(id: number, dto: UpdateProjectDto): Promise<ProjectEntity> {
-    await this.projectRepository.update(id, dto as any);
+    await this.projectRepository.update(id, dto);
     return this.findOne(id);
   }
 
@@ -99,20 +139,26 @@ export class ProjectsService {
     await this.projectRepository.remove(project);
   }
 
-  async createResponsible(dto: CreateProjectResponsibleDto): Promise<ProjectResponsibleEntity> {
+  async createResponsible(
+    dto: CreateProjectResponsibleDto,
+  ): Promise<ProjectResponsibleEntity> {
     const existing = await this.responsibleRepository.findOne({
       where: { project_id: dto.project_id, user_id: dto.user_id },
     });
 
     if (existing) {
-      throw new ConflictException('El usuario ya es responsable de este proyecto');
+      throw new ConflictException(
+        'El usuario ya es responsable de este proyecto',
+      );
     }
 
     const responsible = this.responsibleRepository.create(dto);
     return this.responsibleRepository.save(responsible);
   }
 
-  async findResponsibles(projectId: number): Promise<ProjectResponsibleEntity[]> {
+  async findResponsibles(
+    projectId: number,
+  ): Promise<ProjectResponsibleEntity[]> {
     return this.responsibleRepository.find({
       where: { project_id: projectId },
       relations: { user: true },

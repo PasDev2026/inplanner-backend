@@ -15,13 +15,22 @@ export class CentralizadoService {
 
   async findAll() {
     const [roles, sedes] = await Promise.all([
-      this.rolRepository.find({ where: { estado: true }, order: { nom_rol: 'ASC' } }),
-      this.sedeRepository.find({ where: { estado: true }, order: { nom_sede: 'ASC' } }),
+      this.rolRepository.find({
+        where: { estado: true },
+        order: { nom_rol: 'ASC' },
+      }),
+      this.sedeRepository.find({
+        where: { estado: true },
+        order: { nom_sede: 'ASC' },
+      }),
     ]);
 
     return {
       roles: roles.map((r) => ({ id: Number(r.id_rol), nombre: r.nom_rol })),
-      sedes: sedes.map((s) => ({ id: Number(s.id_sede), nombre: s.nom_sede.replace(/^INSALUD\s+/i, '').trim() })),
+      sedes: sedes.map((s) => ({
+        id: Number(s.id_sede),
+        nombre: s.nom_sede.replace(/^INSALUD\s+/i, '').trim(),
+      })),
     };
   }
 }

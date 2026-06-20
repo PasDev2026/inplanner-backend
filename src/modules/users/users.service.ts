@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 import { SocketService } from '../socket/socket.service';
+import { AreaEntity } from '../areas/area.entity';
 
 @Injectable()
 export class UsersService {
@@ -27,27 +32,38 @@ export class UsersService {
     await this.checkUniqueness(dto.username, dto.email, dto.dni);
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const { sede_ids, rol_ids, ...userData } = dto;
+    const { sede_ids, rol_ids, area_id, ...userData } = dto;
     const user = this.userRepository.create({
       ...userData,
       password: hashedPassword,
     });
+
+    if (area_id !== undefined) {
+      const areaRef = new AreaEntity();
+      areaRef.id_area = area_id;
+      user.area = areaRef;
+    }
+
     const saved = await this.userRepository.save(user);
 
     if (sede_ids && sede_ids.length > 0) {
       await this.userSedeRepository.save(
-        sede_ids.map((sede_id) => this.userSedeRepository.create({ user_id: saved.id_user, sede_id })),
+        sede_ids.map((sede_id) =>
+          this.userSedeRepository.create({ user_id: saved.id_user, sede_id }),
+        ),
       );
     }
     if (rol_ids && rol_ids.length > 0) {
       await this.userRoleRepository.save(
-        rol_ids.map((rol_id) => this.userRoleRepository.create({ user_id: saved.id_user, rol_id })),
+        rol_ids.map((rol_id) =>
+          this.userRoleRepository.create({ user_id: saved.id_user, rol_id }),
+        ),
       );
     }
 
     const savedUser = await this.userRepository.findOne({
       where: { id_user: saved.id_user },
-      relations: { userSedes: true, userRoles: true },
+      relations: { userSedes: true, userRoles: true, area: true },
     });
     return savedUser!;
   }
@@ -62,15 +78,26 @@ export class UsersService {
       baseWhere.estado = estado === 'true';
     }
     if (area_id !== undefined) {
-      baseWhere.area = { id_area: area_id } as any;
+      const areaRef = new AreaEntity();
+      areaRef.id_area = area_id;
+      baseWhere.area = areaRef;
     }
 
-    let where: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[] = baseWhere;
+    let where: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[] =
+      baseWhere;
 
     if (search) {
-      const searchFields: (keyof Pick<UserEntity, 'username' | 'name' | 'apellido_paterno' | 'apellido_materno' | 'email'>)[] =
-        ['username', 'name', 'apellido_paterno', 'apellido_materno', 'email'];
-      where = searchFields.map(field => ({
+      const searchFields: (keyof Pick<
+        UserEntity,
+        'username' | 'name' | 'apellido_paterno' | 'apellido_materno' | 'email'
+      >)[] = [
+        'username',
+        'name',
+        'apellido_paterno',
+        'apellido_materno',
+        'email',
+      ];
+      where = searchFields.map((field) => ({
         ...baseWhere,
         [field]: ILike(`%${search}%`),
       }));
@@ -81,7 +108,7 @@ export class UsersService {
       skip,
       take: limit,
       order: { username: 'ASC' },
-      relations: { userSedes: true, userRoles: true },
+      relations: { userSedes: true, userRoles: true, area: true },
     });
 
     return {
@@ -98,7 +125,7 @@ export class UsersService {
   async findOne(id: number): Promise<UserEntity> {
     const user = await this.userRepository.findOne({
       where: { id_user: id },
-      relations: { userSedes: true, userRoles: true },
+      relations: { userSedes: true, userRoles: true, area: true },
     });
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -121,20 +148,29 @@ export class UsersService {
       );
     }
 
-    const { sede_ids, rol_ids, ...updateFields } = dto;
+    const { sede_ids, rol_ids, area_id, ...updateFields } = dto;
 
     if (updateFields.password) {
       updateFields.password = await bcrypt.hash(updateFields.password, 10);
     }
 
     Object.assign(user, updateFields);
-    const saved = await this.userRepository.save(user);
+
+    if (area_id !== undefined) {
+      const areaRef = new AreaEntity();
+      areaRef.id_area = area_id;
+      user.area = areaRef;
+    }
+
+    await this.userRepository.save(user);
 
     if (sede_ids !== undefined) {
       await this.userSedeRepository.delete({ user_id: id });
       if (sede_ids.length > 0) {
         await this.userSedeRepository.save(
-          sede_ids.map((sede_id) => this.userSedeRepository.create({ user_id: id, sede_id })),
+          sede_ids.map((sede_id) =>
+            this.userSedeRepository.create({ user_id: id, sede_id }),
+          ),
         );
       }
     }
@@ -143,7 +179,9 @@ export class UsersService {
       await this.userRoleRepository.delete({ user_id: id });
       if (rol_ids.length > 0) {
         await this.userRoleRepository.save(
-          rol_ids.map((rol_id) => this.userRoleRepository.create({ user_id: id, rol_id })),
+          rol_ids.map((rol_id) =>
+            this.userRoleRepository.create({ user_id: id, rol_id }),
+          ),
         );
       }
     }
@@ -157,7 +195,7 @@ export class UsersService {
 
     const updatedUser = await this.userRepository.findOne({
       where: { id_user: id },
-      relations: { userSedes: true, userRoles: true },
+      relations: { userSedes: true, userRoles: true, area: true },
     });
     return updatedUser!;
   }

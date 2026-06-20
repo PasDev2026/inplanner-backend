@@ -11,7 +11,9 @@ export class UserRoleEntity {
   rol_id: number;
 
   @Exclude()
-  @ManyToOne(() => UserEntity, (user) => user.userRoles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => UserEntity, (user) => user.userRoles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 }

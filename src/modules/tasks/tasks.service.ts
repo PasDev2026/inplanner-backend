@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { TaskEntity } from './task.entity';
@@ -20,15 +24,20 @@ export class TasksService {
   ) {}
 
   async create(dto: CreateTaskDto, createdById: number): Promise<TaskEntity> {
-    const task = this.taskRepository.create({
-      ...dto,
-      created_by_id: createdById,
-    } as any) as unknown as TaskEntity;
+    const task = new TaskEntity();
+    Object.assign(task, dto, { created_by_id: createdById });
     return this.taskRepository.save(task);
   }
 
   async findAll(query: QueryTaskDto): Promise<PaginatedResult<TaskEntity>> {
-    const { page = 1, limit = 20, search, project_id, status, priority } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      project_id,
+      status,
+      priority,
+    } = query;
     const take = limit > 0 ? limit : undefined;
     const skip = limit > 0 ? (page - 1) * limit : 0;
 
@@ -84,7 +93,7 @@ export class TasksService {
       throw new NotFoundException(`Tarea con ID ${id} no encontrada`);
     }
 
-    (task as any).subtasks_count = await this.taskRepository.count({
+    task.subtasks_count = await this.taskRepository.count({
       where: { parent_task_id: id },
     });
 
@@ -92,7 +101,7 @@ export class TasksService {
   }
 
   async update(id: number, dto: UpdateTaskDto): Promise<TaskEntity> {
-    await this.taskRepository.update(id, dto as any);
+    await this.taskRepository.update(id, dto);
     return this.findOne(id);
   }
 
@@ -101,7 +110,9 @@ export class TasksService {
     await this.taskRepository.remove(task);
   }
 
-  async createAssignment(dto: CreateTaskAssignmentDto): Promise<TaskAssignmentEntity> {
+  async createAssignment(
+    dto: CreateTaskAssignmentDto,
+  ): Promise<TaskAssignmentEntity> {
     const existing = await this.assignmentRepository.findOne({
       where: { task_id: dto.task_id, user_id: dto.user_id },
     });
@@ -148,7 +159,7 @@ export class TasksService {
   }
 
   private async _attachSubtasksCount(tasks: TaskEntity[]): Promise<void> {
-    const ids = tasks.map(t => t.id_task);
+    const ids = tasks.map((t) => t.id_task);
     if (ids.length === 0) return;
 
     const counts = await this.taskRepository
@@ -157,23 +168,22 @@ export class TasksService {
       .addSelect('COUNT(*)', 'cnt')
       .where('child.parent_task_id IN (:...ids)', { ids })
       .groupBy('child.parent_task_id')
-      .getRawMany() as { parent_id: number; cnt: string }[];
+      .getRawMany();
 
     const countMap = new Map<number, number>(
-      counts.map(c => [c.parent_id, Number(c.cnt)]),
+      counts.map((c) => [c.parent_id, Number(c.cnt)]),
     );
 
     for (const task of tasks) {
-      (task as any).subtasks_count = countMap.get(task.id_task) ?? 0;
+      task.subtasks_count = countMap.get(task.id_task) ?? 0;
     }
   }
 
-  async updateStatus(id: number, dto: UpdateTaskStatusDto): Promise<TaskEntity> {
-    const task = await this.taskRepository.findOne({ where: { id_task: id } });
-    if (!task) {
-      throw new NotFoundException(`Tarea con ID ${id} no encontrada`);
-    }
-    Object.assign(task, dto);
-    return this.taskRepository.save(task);
+  async updateStatus(
+    id: number,
+    dto: UpdateTaskStatusDto,
+  ): Promise<TaskEntity> {
+    await this.taskRepository.update(id, dto);
+    return this.findOne(id);
   }
 }

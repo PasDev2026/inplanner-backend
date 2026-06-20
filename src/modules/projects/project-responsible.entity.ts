@@ -10,7 +10,7 @@ export class ProjectResponsibleEntity {
   @PrimaryColumn()
   user_id: number;
 
-  @ManyToOne(() => ProjectEntity, p => p.responsibles)
+  @ManyToOne(() => ProjectEntity, (p) => p.responsibles)
   @JoinColumn({ name: 'project_id' })
   project: ProjectEntity;
 

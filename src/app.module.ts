@@ -14,6 +14,7 @@ import { NotesModule } from './modules/notes/notes.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SocketModule } from './modules/socket/socket.module';
 import { AuthGuard } from './common/guards/auth.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
@@ -56,6 +57,10 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
     {
       provide: APP_GUARD,

@@ -15,7 +15,7 @@ import { AuthService } from '../auth/auth.service';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
   pingInterval: 25000,
@@ -56,7 +56,11 @@ export class SocketGateway
 
   async handleConnection(client: Socket): Promise<void> {
     try {
-      const token = client.handshake.auth?.token as string | undefined;
+      const cookies = client.handshake.headers.cookie || '';
+      const token = cookies
+        .split('; ')
+        .find((c) => c.startsWith('access_token='))
+        ?.split('=')[1];
 
       if (!token) {
         client.emit('error', { message: 'Token no proporcionado' });
@@ -64,12 +68,15 @@ export class SocketGateway
         return;
       }
 
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
-      });
+      const payload = await this.jwtService.verifyAsync<{ sub: number }>(
+        token,
+        {
+          secret: process.env.JWT_SECRET,
+        },
+      );
 
       this.socketService.addConnection(client.id, payload.sub);
-      client.join(`user_${payload.sub}`);
+      void client.join(`user_${payload.sub}`);
 
       this.logger.log(
         `Cliente conectado — socket=${client.id} user=${payload.sub}`,
@@ -106,36 +113,41 @@ export class SocketGateway
   }
 
   private startInactivityCheck(): void {
-    this.inactivityTimer = setInterval(async () => {
-      if (!this.server) return;
-
-      const inactiveSockets =
-        this.socketService.getInactiveSocketIds(this.inactivityTimeout);
-
-      if (inactiveSockets.length > 0) {
-        this.logger.log(
-          `Inactividad detectada — ${inactiveSockets.length} socket(s)`,
-        );
-      }
-
-      for (const socketId of inactiveSockets) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        const userId = this.socketService.removeConnection(socketId);
-
-        if (userId !== null) {
-          socket?.emit('force-logout', {
-            message: 'Sesión expirada por inactividad',
-          });
-          socket?.disconnect(true);
-
-          await this.authService.revokeAllTokens(userId).catch(() => {
-            this.logger.warn(
-              `Error al revocar tokens del usuario ${userId}`,
-            );
-          });
-        }
-      }
+    this.inactivityTimer = setInterval(() => {
+      this.checkInactivity().catch((err) =>
+        this.logger.error('Error en verificación de inactividad', err),
+      );
     }, this.checkIntervalMs);
+  }
+
+  private async checkInactivity(): Promise<void> {
+    if (!this.server) return;
+
+    const inactiveSockets = this.socketService.getInactiveSocketIds(
+      this.inactivityTimeout,
+    );
+
+    if (inactiveSockets.length > 0) {
+      this.logger.log(
+        `Inactividad detectada — ${inactiveSockets.length} socket(s)`,
+      );
+    }
+
+    for (const socketId of inactiveSockets) {
+      const socket = this.server.sockets.sockets.get(socketId);
+      const userId = this.socketService.removeConnection(socketId);
+
+      if (userId !== null) {
+        socket?.emit('force-logout', {
+          message: 'Sesión expirada por inactividad',
+        });
+        socket?.disconnect(true);
+
+        await this.authService.revokeAllTokens(userId).catch(() => {
+          this.logger.warn(`Error al revocar tokens del usuario ${userId}`);
+        });
+      }
+    }
   }
 
   onGatewayShutdown(): void {

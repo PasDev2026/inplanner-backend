@@ -51,9 +51,9 @@ export class ProjectEntity {
   @JoinColumn({ name: 'manager_id' })
   manager: UserEntity;
 
-  @OneToMany(() => ProjectResponsibleEntity, pr => pr.project)
+  @OneToMany(() => ProjectResponsibleEntity, (pr) => pr.project)
   responsibles: ProjectResponsibleEntity[];
 
-  @OneToMany(() => TaskEntity, t => t.project)
+  @OneToMany(() => TaskEntity, (t) => t.project)
   tasks: TaskEntity[];
 }

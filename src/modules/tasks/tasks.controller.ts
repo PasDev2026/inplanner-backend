@@ -9,7 +9,14 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -25,21 +32,34 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear tarea', description: 'Crea una nueva tarea. El usuario autenticado se asigna como creador automáticamente' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Crear tarea',
+    description:
+      'Crea una nueva tarea. El usuario autenticado se asigna como creador automáticamente',
+  })
   @ApiResponse({ status: 201, description: 'Tarea creada exitosamente' })
   create(@Body() dto: CreateTaskDto, @CurrentUser('sub') userId: number) {
     return this.tasksService.create(dto, userId);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar tareas', description: 'Obtiene todas las tareas con paginación y filtros' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar tareas',
+    description: 'Obtiene todas las tareas con paginación y filtros',
+  })
   @ApiResponse({ status: 200, description: 'Lista de tareas paginada' })
   findAll(@Query() query: QueryTaskDto) {
     return this.tasksService.findAll(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener tarea por ID', description: 'Devuelve una tarea específica por su ID' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Obtener tarea por ID',
+    description: 'Devuelve una tarea específica por su ID',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 200, description: 'Tarea encontrada' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada' })
@@ -48,7 +68,11 @@ export class TasksController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar tarea', description: 'Actualiza los datos de una tarea existente' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Actualizar tarea',
+    description: 'Actualiza los datos de una tarea existente',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 200, description: 'Tarea actualizada' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTaskDto) {
@@ -56,7 +80,11 @@ export class TasksController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar tarea', description: 'Elimina una tarea del sistema' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Eliminar tarea',
+    description: 'Elimina una tarea del sistema',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 200, description: 'Tarea eliminada' })
   remove(@Param('id', ParseIntPipe) id: number) {
@@ -64,7 +92,11 @@ export class TasksController {
   }
 
   @Post(':taskId/assignments')
-  @ApiOperation({ summary: 'Asignar usuario a tarea', description: 'Asigna un usuario a una tarea' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Asignar usuario a tarea',
+    description: 'Asigna un usuario a una tarea',
+  })
   @ApiParam({ name: 'taskId', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 201, description: 'Usuario asignado' })
   createAssignment(
@@ -75,7 +107,11 @@ export class TasksController {
   }
 
   @Get(':taskId/assignments')
-  @ApiOperation({ summary: 'Listar asignaciones', description: 'Obtiene los usuarios asignados a una tarea' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar asignaciones',
+    description: 'Obtiene los usuarios asignados a una tarea',
+  })
   @ApiParam({ name: 'taskId', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 200, description: 'Lista de asignaciones' })
   findAssignments(@Param('taskId', ParseIntPipe) taskId: number) {
@@ -83,9 +119,17 @@ export class TasksController {
   }
 
   @Delete(':taskId/assignments/:userId')
-  @ApiOperation({ summary: 'Quitar asignación', description: 'Elimina la asignación de un usuario a una tarea' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Quitar asignación',
+    description: 'Elimina la asignación de un usuario a una tarea',
+  })
   @ApiParam({ name: 'taskId', type: Number, description: 'ID de la tarea' })
-  @ApiParam({ name: 'userId', type: Number, description: 'ID del usuario asignado' })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: 'ID del usuario asignado',
+  })
   @ApiResponse({ status: 200, description: 'Asignación eliminada' })
   removeAssignment(
     @Param('taskId', ParseIntPipe) taskId: number,
@@ -95,7 +139,11 @@ export class TasksController {
   }
 
   @Get(':id/children')
-  @ApiOperation({ summary: 'Obtener subtareas', description: 'Devuelve las subtareas directas de una tarea' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Obtener subtareas',
+    description: 'Devuelve las subtareas directas de una tarea',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la tarea padre' })
   @ApiResponse({ status: 200, description: 'Lista de subtareas' })
   findChildren(@Param('id', ParseIntPipe) id: number) {
@@ -103,7 +151,12 @@ export class TasksController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Actualizar estado', description: 'Actualiza el estado de una tarea (0=Pendiente, 1=En espera, 2=En progreso, 3=En revisi\u00f3n, 4=Completado)' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Actualizar estado',
+    description:
+      'Actualiza el estado de una tarea (0=Pendiente, 1=En espera, 2=En progreso, 3=En revisi\u00f3n, 4=Completado)',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID de la tarea' })
   @ApiResponse({ status: 200, description: 'Estado actualizado' })
   updateStatus(

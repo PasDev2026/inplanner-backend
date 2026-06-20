@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CentralizadoService } from './centralizado.service';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -10,7 +11,12 @@ export class CentralizadoController {
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Obtener roles y sedes', description: 'Devuelve la lista de roles y sedes desde la base centralizada (público)' })
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Obtener roles y sedes',
+    description:
+      'Devuelve la lista de roles y sedes desde la base centralizada (público)',
+  })
   @ApiResponse({ status: 200, description: 'Lista de roles y sedes' })
   findAll() {
     return this.centralizadoService.findAll();

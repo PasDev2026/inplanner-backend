@@ -9,7 +9,14 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -23,21 +30,33 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear proyecto', description: 'Crea un nuevo proyecto' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Crear proyecto',
+    description: 'Crea un nuevo proyecto',
+  })
   @ApiResponse({ status: 201, description: 'Proyecto creado exitosamente' })
   create(@Body() dto: CreateProjectDto) {
     return this.projectsService.create(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar proyectos', description: 'Obtiene todos los proyectos con paginación y filtros' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar proyectos',
+    description: 'Obtiene todos los proyectos con paginación y filtros',
+  })
   @ApiResponse({ status: 200, description: 'Lista de proyectos paginada' })
   findAll(@Query() query: QueryProjectDto) {
     return this.projectsService.findAll(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener proyecto por ID', description: 'Devuelve un proyecto específico por su ID' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Obtener proyecto por ID',
+    description: 'Devuelve un proyecto específico por su ID',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID del proyecto' })
   @ApiResponse({ status: 200, description: 'Proyecto encontrado' })
   @ApiResponse({ status: 404, description: 'Proyecto no encontrado' })
@@ -46,7 +65,11 @@ export class ProjectsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar proyecto', description: 'Actualiza los datos de un proyecto existente' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Actualizar proyecto',
+    description: 'Actualiza los datos de un proyecto existente',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID del proyecto' })
   @ApiResponse({ status: 200, description: 'Proyecto actualizado' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProjectDto) {
@@ -54,7 +77,11 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar proyecto', description: 'Elimina un proyecto del sistema' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Eliminar proyecto',
+    description: 'Elimina un proyecto del sistema',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID del proyecto' })
   @ApiResponse({ status: 200, description: 'Proyecto eliminado' })
   remove(@Param('id', ParseIntPipe) id: number) {
@@ -62,18 +89,29 @@ export class ProjectsController {
   }
 
   @Post(':projectId/responsibles')
-  @ApiOperation({ summary: 'Asignar responsable', description: 'Asigna un usuario como responsable del proyecto' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Asignar responsable',
+    description: 'Asigna un usuario como responsable del proyecto',
+  })
   @ApiParam({ name: 'projectId', type: Number, description: 'ID del proyecto' })
   @ApiResponse({ status: 201, description: 'Responsable asignado' })
   createResponsible(
     @Param('projectId', ParseIntPipe) projectId: number,
     @Body() dto: CreateProjectResponsibleDto,
   ) {
-    return this.projectsService.createResponsible({ ...dto, project_id: projectId });
+    return this.projectsService.createResponsible({
+      ...dto,
+      project_id: projectId,
+    });
   }
 
   @Get(':projectId/responsibles')
-  @ApiOperation({ summary: 'Listar responsables', description: 'Obtiene los responsables de un proyecto' })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar responsables',
+    description: 'Obtiene los responsables de un proyecto',
+  })
   @ApiParam({ name: 'projectId', type: Number, description: 'ID del proyecto' })
   @ApiResponse({ status: 200, description: 'Lista de responsables' })
   findResponsibles(@Param('projectId', ParseIntPipe) projectId: number) {
@@ -81,9 +119,17 @@ export class ProjectsController {
   }
 
   @Delete(':projectId/responsibles/:userId')
-  @ApiOperation({ summary: 'Quitar responsable', description: 'Elimina un responsable del proyecto' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Quitar responsable',
+    description: 'Elimina un responsable del proyecto',
+  })
   @ApiParam({ name: 'projectId', type: Number, description: 'ID del proyecto' })
-  @ApiParam({ name: 'userId', type: Number, description: 'ID del usuario responsable' })
+  @ApiParam({
+    name: 'userId',
+    type: Number,
+    description: 'ID del usuario responsable',
+  })
   @ApiResponse({ status: 200, description: 'Responsable eliminado' })
   removeResponsible(
     @Param('projectId', ParseIntPipe) projectId: number,

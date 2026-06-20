@@ -15,10 +15,8 @@ export class NotesService {
   ) {}
 
   async create(dto: CreateNoteDto, createdById: number): Promise<NoteEntity> {
-    const note = this.noteRepository.create({
-      ...dto,
-      created_by_id: createdById,
-    } as any) as unknown as NoteEntity;
+    const note = new NoteEntity();
+    Object.assign(note, dto, { created_by_id: createdById });
     return this.noteRepository.save(note);
   }
 

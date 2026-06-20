@@ -12,7 +12,11 @@ import { UserEntity } from '../users/user.entity';
 import { UserRoleEntity } from '../users/user-role.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { Role } from '../../common/enums/role.enum';
-import { JwtPayload, LoginResponse, UserProfile } from './interfaces/auth-types';
+import {
+  JwtPayload,
+  LoginResponse,
+  UserProfile,
+} from './interfaces/auth-types';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -44,15 +48,20 @@ export class AuthService {
       relations: { userRoles: true },
     });
 
-    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Credenciales inválidas');
+    if (!user) {
+      throw new UnauthorizedException('El usuario no existe');
+    }
+
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Password incorrecto');
     }
 
     if (!user.estado) {
       throw new UnauthorizedException('Cuenta suspendida');
     }
 
-    const fullName = `${user.name} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim();
+    const fullName =
+      `${user.name} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim();
     const roles = this.resolveRoles(user.userRoles);
 
     const payload: JwtPayload = {
@@ -91,13 +100,20 @@ export class AuthService {
     if (tokenRecord.revoked) {
       throw new UnauthorizedException('Refresh token revocado');
     }
-    if (tokenRecord.expiration_date && tokenRecord.expiration_date < new Date()) {
-      await this.refreshTokenRepository.update(tokenRecord.id, { revoked: true });
+    if (
+      tokenRecord.expiration_date &&
+      tokenRecord.expiration_date < new Date()
+    ) {
+      await this.refreshTokenRepository.update(tokenRecord.id, {
+        revoked: true,
+      });
       throw new UnauthorizedException('Refresh token expirado');
     }
 
     if (!tokenRecord.user.estado) {
-      throw new UnauthorizedException('Cuenta suspendida. Contacte al administrador.');
+      throw new UnauthorizedException(
+        'Cuenta suspendida. Contacte al administrador.',
+      );
     }
 
     const userRoles = await this.userRoleRepository.find({
@@ -128,7 +144,8 @@ export class AuthService {
       throw new UnauthorizedException('Cuenta suspendida');
     }
 
-    const fullName = `${user.name} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim();
+    const fullName =
+      `${user.name} ${user.apellido_paterno ?? ''} ${user.apellido_materno ?? ''}`.trim();
     const roles = this.resolveRoles(user.userRoles);
 
     return {
@@ -185,8 +202,13 @@ export class AuthService {
     return token;
   }
 
-  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<{ message: string }> {
-    const user = await this.userRepository.findOne({ where: { id_user: userId } });
+  async updateProfile(
+    userId: number,
+    dto: UpdateProfileDto,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id_user: userId },
+    });
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -203,8 +225,13 @@ export class AuthService {
     return { message: 'Perfil actualizado exitosamente' };
   }
 
-  async updatePassword(userId: number, dto: UpdatePasswordDto): Promise<{ message: string }> {
-    const user = await this.userRepository.findOne({ where: { id_user: userId } });
+  async updatePassword(
+    userId: number,
+    dto: UpdatePasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id_user: userId },
+    });
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');

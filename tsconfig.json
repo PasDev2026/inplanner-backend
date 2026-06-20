@@ -20,6 +20,7 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
+    "types": ["node", "jest", "cookie-parser"],
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   }
