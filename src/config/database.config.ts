@@ -2,12 +2,14 @@ import { config as dotenvConfig } from 'dotenv';
 import { registerAs } from '@nestjs/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { DB_SCHEMA } from './schema';
 
 dotenvConfig();
 
 const config = {
   type: 'postgres' as const,
   url: process.env.DATABASE_URL,
+  schema: DB_SCHEMA,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/database/migrations/*.js'],
   synchronize: false,

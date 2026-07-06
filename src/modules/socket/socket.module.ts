@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from '../auth/auth.module';
-import { RefreshTokenEntity } from '../auth/refresh-token.entity';
+import { AuthModule } from '../../app/auth/auth.module';
+import { RefreshTokenEntity } from '../../app/auth/entities/refresh-token.entity';
 import { SocketGateway } from './socket.gateway';
 import { SocketService } from './socket.service';
 

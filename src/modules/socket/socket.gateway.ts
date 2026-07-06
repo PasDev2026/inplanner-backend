@@ -11,7 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import * as process from 'node:process';
 import { SocketService } from './socket.service';
-import { AuthService } from '../auth/auth.service';
+import { AuthService } from '../../app/auth/auth.service';
 
 @WebSocketGateway({
   cors: {

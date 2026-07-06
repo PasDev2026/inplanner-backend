@@ -5,16 +5,15 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import databaseConfig from './config/database.config';
-import { CentralizadoModule } from './modules/centralizado/centralizado.module';
-import { AreasModule } from './modules/areas/areas.module';
-import { UsersModule } from './modules/users/users.module';
-import { ProjectsModule } from './modules/projects/projects.module';
-import { TasksModule } from './modules/tasks/tasks.module';
-import { NotesModule } from './modules/notes/notes.module';
-import { AuthModule } from './modules/auth/auth.module';
+import { CentralizadoModule } from './app/centralizado/centralizado.module';
+import { AreasModule } from './app/areas/areas.module';
+import { UsersModule } from './app/users/users.module';
+import { ProjectsModule } from './app/projects/projects.module';
+import { TasksModule } from './app/tasks/tasks.module';
+import { NotesModule } from './app/notes/notes.module';
+import { AuthModule } from './app/auth/auth.module';
 import { SocketModule } from './modules/socket/socket.module';
 import { AuthGuard } from './common/guards/auth.guard';
-import { CsrfGuard } from './common/guards/csrf.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
@@ -29,6 +28,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
+        schema: config.get('DB_SCHEMA') || 'inplanner',
         autoLoadEntities: true,
         synchronize: false,
         namingStrategy: new SnakeNamingStrategy(),
@@ -57,10 +57,6 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: CsrfGuard,
     },
     {
       provide: APP_GUARD,
