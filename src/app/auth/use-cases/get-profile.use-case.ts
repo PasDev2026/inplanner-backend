@@ -38,6 +38,7 @@ export class GetProfileUseCase {
         email: user.email,
         name: user.name,
         apellido_paterno: user.apellido_paterno ?? '',
+        dni: user.dni,
         fullName,
         roles,
       },
