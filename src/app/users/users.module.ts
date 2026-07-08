@@ -10,6 +10,7 @@ import { FindUsersUseCase } from './use-cases/find-users.use-case';
 import { FindUserUseCase } from './use-cases/find-user.use-case';
 import { UpdateUserUseCase } from './use-cases/update-user.use-case';
 import { DeleteUserUseCase } from './use-cases/delete-user.use-case';
+import { FindAvailableUsersUseCase } from './use-cases/find-available-users.use-case';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -23,6 +24,7 @@ import { UsersService } from './users.service';
     CreateUserUseCase,
     FindUsersUseCase,
     FindUserUseCase,
+    FindAvailableUsersUseCase,
     UpdateUserUseCase,
     DeleteUserUseCase,
     UsersService,

@@ -4,7 +4,10 @@ import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { UserSedeEntity } from '../entities/user-sede.entity';
 import { UserRoleEntity } from '../entities/user-role.entity';
-import type { IUsersRepository } from '../repository/user-repository.interface';
+import type {
+  AvailableUser,
+  IUsersRepository,
+} from '../repository/user-repository.interface';
 import { QueryUserDto } from '../dtos/query-user.dto';
 import { PaginatedResult } from '../../../common/interfaces/pagination.interface';
 import { AreaEntity } from '../../areas/entities/area.entity';
@@ -124,5 +127,17 @@ export class UserTypeormRepository implements IUsersRepository {
         ),
       );
     }
+  }
+
+  async findAvailable(): Promise<AvailableUser[]> {
+    return this.repo.find({
+      select: {
+        id_user: true,
+        name: true,
+        apellido_paterno: true,
+        apellido_materno: true,
+      },
+      order: { name: 'ASC' },
+    });
   }
 }

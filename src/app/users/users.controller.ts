@@ -61,6 +61,18 @@ export class UsersController {
     return this.usersService.findAll(query);
   }
 
+  @Get('available')
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar usuarios disponibles para asignación',
+    description:
+      'Devuelve lista básica de usuarios (id, nombre) sin paginación',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de usuarios' })
+  findAvailable() {
+    return this.usersService.findAvailable();
+  }
+
   @Get(':id')
   @Roles(Role.SUPER_ADMIN, Role.JEFATURA)
   @SerializeOptions({ groups: ['user-detail'] })
