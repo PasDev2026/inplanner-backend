@@ -45,7 +45,7 @@ export class TaskEntity {
   @Column({ type: 'timestamp', nullable: true })
   due_date: Date;
 
-  @Column({ type: 'smallint', nullable: true })
+  @Column({ type: 'smallint', default: 0 })
   status: number;
 
   @Column({ type: 'smallint', nullable: true })

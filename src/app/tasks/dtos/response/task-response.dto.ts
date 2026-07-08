@@ -17,6 +17,20 @@ export class TaskResponseDto {
   updated_at: Date;
   subtasks_count?: number;
   assignments?: { task_id: number; user_id: number; user_name?: string }[];
+  notes?: {
+    id_note: number;
+    content: string;
+    task_id: number;
+    created_by_id: number;
+    created_at: Date;
+    updated_at: Date;
+    createdBy?: {
+      id_user: number;
+      name: string;
+      apellido_paterno: string | null;
+      email: string;
+    };
+  }[];
 
   static fromEntity(entity: TaskEntity): TaskResponseDto {
     const dto = new TaskResponseDto();
@@ -39,6 +53,24 @@ export class TaskResponseDto {
         task_id: a.task_id,
         user_id: a.user_id,
         user_name: a.user?.username,
+      }));
+    }
+    if (entity.notes) {
+      dto.notes = entity.notes.map((n) => ({
+        id_note: n.id_note,
+        content: n.content,
+        task_id: n.task_id,
+        created_by_id: n.created_by_id,
+        created_at: n.created_at,
+        updated_at: n.updated_at,
+        createdBy: n.createdBy
+          ? {
+              id_user: n.createdBy.id_user,
+              name: n.createdBy.name,
+              apellido_paterno: n.createdBy.apellido_paterno,
+              email: n.createdBy.email,
+            }
+          : undefined,
       }));
     }
     return dto;

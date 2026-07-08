@@ -60,4 +60,6 @@ export class ProjectEntity {
 
   @OneToMany(() => TaskEntity, (t) => t.project)
   tasks: TaskEntity[];
+
+  progress?: number;
 }

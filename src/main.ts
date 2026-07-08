@@ -18,6 +18,8 @@ import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  const startTime = Date.now();
+  logger.log('[TIMER] Inicio del bootstrap');
 
   const envSchema = z.object({
     DATABASE_URL: z.string().min(1, 'DATABASE_URL es requerida'),
@@ -36,11 +38,13 @@ async function bootstrap() {
     }
     process.exit(1);
   }
+  logger.log(`[TIMER] Zod validation: ${Date.now() - startTime}ms`);
 
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
     bodyParser: false,
   });
+  logger.log(`[TIMER] NestFactory.create (TypeORM + modules + DB): ${Date.now() - startTime}ms`);
   app.use(express.json({ limit: '1mb' }));
   app.useLogger(new JsonLogger());
 
@@ -69,6 +73,7 @@ async function bootstrap() {
     new TransformInterceptor(),
     new ClassSerializerInterceptor(app.get(Reflector)),
   );
+  logger.log(`[TIMER] Middlewares + Pipes + Interceptors: ${Date.now() - startTime}ms`);
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Inplanner API')
@@ -86,10 +91,12 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+  logger.log(`[TIMER] Swagger createDocument: ${Date.now() - startTime}ms`);
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
+  logger.log(`[TIMER] app.listen: ${Date.now() - startTime}ms`);
   logger.log(`Servidor corriendo en puerto ${port}`);
 }
 void bootstrap();

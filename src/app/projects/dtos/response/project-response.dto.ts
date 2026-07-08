@@ -15,6 +15,7 @@ export class ProjectResponseDto {
   privacy_level: number;
   created_at: Date;
   updated_at: Date;
+  progress: number;
   responsibles?: ProjectResponsibleResponseDto[];
 
   static fromEntity(entity: ProjectEntity): ProjectResponseDto {
@@ -31,6 +32,7 @@ export class ProjectResponseDto {
     dto.privacy_level = entity.privacy_level;
     dto.created_at = entity.created_at;
     dto.updated_at = entity.updated_at;
+    dto.progress = entity.progress ?? 0;
     if (entity.responsibles) {
       dto.responsibles = entity.responsibles.map((r) =>
         ProjectResponsibleResponseDto.fromEntity(r),

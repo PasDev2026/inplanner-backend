@@ -13,7 +13,7 @@ export class CreateTaskUseCase {
 
   async execute(dto: CreateTaskDto, createdById: number): Promise<TaskEntity> {
     const task = new TaskEntity();
-    Object.assign(task, dto, { created_by_id: createdById });
+    Object.assign(task, dto, { created_by_id: createdById, status: dto.status ?? 0 });
     return this.taskRepo.save(task);
   }
 }

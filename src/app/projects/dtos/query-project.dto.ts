@@ -74,6 +74,16 @@ export class QueryProjectDto {
   manager_id?: number;
 
   @ApiProperty({
+    example: 3,
+    description: 'Filtrar por responsable (ID de usuario)',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  responsible_id?: number;
+
+  @ApiProperty({
     example: '2026-01-01',
     description: 'Fecha inicio del rango (start_date >= YYYY-MM-DD)',
     required: false,
