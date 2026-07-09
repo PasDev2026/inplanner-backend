@@ -57,4 +57,24 @@ export class QueryUserDto {
   @Type(() => Number)
   @IsInt()
   area_id?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Filtrar por ID de rol',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  rol_id?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Filtrar por ID de sede',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  sede_id?: number;
 }

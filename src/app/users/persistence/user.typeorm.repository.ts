@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { UserSedeEntity } from '../entities/user-sede.entity';
 import { UserRoleEntity } from '../entities/user-role.entity';
@@ -10,7 +10,6 @@ import type {
 } from '../repository/user-repository.interface';
 import { QueryUserDto } from '../dtos/query-user.dto';
 import { PaginatedResult } from '../../../common/interfaces/pagination.interface';
-import { AreaEntity } from '../../areas/entities/area.entity';
 
 @Injectable()
 export class UserTypeormRepository implements IUsersRepository {
@@ -30,47 +29,46 @@ export class UserTypeormRepository implements IUsersRepository {
   async findWithPagination(
     query: QueryUserDto,
   ): Promise<PaginatedResult<UserEntity>> {
-    const { page = 1, limit = 20, search, estado, area_id } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      estado,
+      area_id,
+      rol_id,
+      sede_id,
+    } = query;
     const skip = (page - 1) * limit;
 
-    const baseWhere: FindOptionsWhere<UserEntity> = {};
-
-    if (estado !== undefined) {
-      baseWhere.estado = estado === 'true';
-    }
-    if (area_id !== undefined) {
-      const areaRef = new AreaEntity();
-      areaRef.id_area = area_id;
-      baseWhere.area = areaRef;
-    }
-
-    let where: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[] =
-      baseWhere;
+    const qb = this.repo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.userSedes', 'userSedes')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('user.area', 'area');
 
     if (search) {
-      const searchFields: (keyof Pick<
-        UserEntity,
-        'username' | 'name' | 'apellido_paterno' | 'apellido_materno' | 'email'
-      >)[] = [
-        'username',
-        'name',
-        'apellido_paterno',
-        'apellido_materno',
-        'email',
-      ];
-      where = searchFields.map((field) => ({
-        ...baseWhere,
-        [field]: ILike(`%${search}%`),
-      }));
+      qb.andWhere(
+        '(user.username ILIKE :search OR user.name ILIKE :search OR user.apellido_paterno ILIKE :search OR user.apellido_materno ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+    if (estado !== undefined) {
+      qb.andWhere('user.estado = :estado', { estado: estado === 'true' });
+    }
+    if (area_id !== undefined) {
+      qb.andWhere('area.id_area = :areaId', { areaId: area_id });
+    }
+    if (rol_id !== undefined) {
+      qb.andWhere('userRoles.rol_id = :rolId', { rolId: rol_id });
+    }
+    if (sede_id !== undefined) {
+      qb.andWhere('userSedes.sede_id = :sedeId', { sedeId: sede_id });
     }
 
-    const [data, total] = await this.repo.findAndCount({
-      where,
-      skip,
-      take: limit,
-      order: { username: 'ASC' },
-      relations: { userSedes: true, userRoles: true, area: true },
-    });
+    qb.orderBy('user.username', 'ASC');
+    qb.skip(skip).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
 
     return {
       data,
