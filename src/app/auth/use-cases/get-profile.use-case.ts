@@ -18,7 +18,7 @@ export class GetProfileUseCase {
   async execute(userId: number): Promise<{ user: UserProfile }> {
     const user = await this.userRepository.findOne({
       where: { id_user: userId },
-      relations: { userRoles: true },
+      relations: { userRoles: true, userSedes: true },
     });
 
     if (!user) {
@@ -41,6 +41,7 @@ export class GetProfileUseCase {
         dni: user.dni,
         fullName,
         roles,
+        sedesIds: user.userSedes?.map((us) => Number(us.sede_id)) ?? [],
       },
     };
   }

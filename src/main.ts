@@ -5,11 +5,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import express from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { z } from 'zod';
 import { AppModule } from './app.module';
 import { JsonLogger } from './common/logger/json-logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -21,30 +21,13 @@ async function bootstrap() {
   const startTime = Date.now();
   logger.log('[TIMER] Inicio del bootstrap');
 
-  const envSchema = z.object({
-    DATABASE_URL: z.string().min(1, 'DATABASE_URL es requerida'),
-    JWT_SECRET: z
-      .string()
-      .min(10, 'JWT_SECRET debe tener al menos 10 caracteres'),
-    FRONTEND_URL: z.string().url('FRONTEND_URL debe ser una URL válida'),
-  });
-
-  const envResult = envSchema.safeParse(process.env);
-  if (!envResult.success) {
-    logger.error('Variables de entorno inválidas o faltantes:');
-    const fieldErrors = envResult.error.flatten().fieldErrors;
-    for (const [key, errors] of Object.entries(fieldErrors)) {
-      logger.error(`  ${key}: ${errors?.join(', ')}`);
-    }
-    process.exit(1);
-  }
-  logger.log(`[TIMER] Zod validation: ${Date.now() - startTime}ms`);
-
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
     bodyParser: false,
   });
-  logger.log(`[TIMER] NestFactory.create (TypeORM + modules + DB): ${Date.now() - startTime}ms`);
+  logger.log(
+    `[TIMER] NestFactory.create (TypeORM + modules + DB): ${Date.now() - startTime}ms`,
+  );
   app.use(express.json({ limit: '1mb' }));
   app.useLogger(new JsonLogger());
 
@@ -54,8 +37,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
+  const configService = app.get(ConfigService);
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: configService.get<string>('FRONTEND_URL'),
     credentials: true,
   });
 
@@ -73,7 +57,9 @@ async function bootstrap() {
     new TransformInterceptor(),
     new ClassSerializerInterceptor(app.get(Reflector)),
   );
-  logger.log(`[TIMER] Middlewares + Pipes + Interceptors: ${Date.now() - startTime}ms`);
+  logger.log(
+    `[TIMER] Middlewares + Pipes + Interceptors: ${Date.now() - startTime}ms`,
+  );
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Inplanner API')
@@ -94,7 +80,7 @@ async function bootstrap() {
   logger.log(`[TIMER] Swagger createDocument: ${Date.now() - startTime}ms`);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT ?? 3000;
+  const port = configService.get('PORT') as number;
   await app.listen(port);
   logger.log(`[TIMER] app.listen: ${Date.now() - startTime}ms`);
   logger.log(`Servidor corriendo en puerto ${port}`);

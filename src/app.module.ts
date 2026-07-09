@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { validateEnv } from './config/envs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { APP_GUARD } from '@nestjs/core';
@@ -21,6 +22,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validateEnv,
       load: [databaseConfig],
     }),
     TypeOrmModule.forRootAsync({

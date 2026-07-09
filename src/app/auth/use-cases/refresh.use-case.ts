@@ -1,6 +1,7 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRoleEntity } from '../../users/entities/user-role.entity';
 import type { IRefreshTokenRepository } from '../repository/refresh-token-repository.interface';
@@ -17,6 +18,7 @@ export class RefreshUseCase {
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepo: IRefreshTokenRepository,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(dto: RefreshTokenDto): Promise<{ accessToken: string }> {
@@ -55,7 +57,9 @@ export class RefreshUseCase {
     };
 
     return {
-      accessToken: this.jwtService.sign(payload, { expiresIn: '15m' }),
+      accessToken: this.jwtService.sign(payload, {
+        expiresIn: this.configService.get('JWT_EXPIRES_IN'),
+      }),
     };
   }
 }

@@ -63,10 +63,14 @@ export class ProjectTypeormRepository implements IProjectRepository {
       idQb.andWhere('project.sede_id = :sedeId', { sedeId: sede_id });
     }
     if (manager_id !== undefined) {
-      idQb.andWhere('project.manager_id = :managerId', { managerId: manager_id });
+      idQb.andWhere('project.manager_id = :managerId', {
+        managerId: manager_id,
+      });
     }
     if (responsible_id !== undefined) {
-      idQb.andWhere('responsibles.user_id = :responsibleId', { responsibleId: responsible_id });
+      idQb.andWhere('responsibles.user_id = :responsibleId', {
+        responsibleId: responsible_id,
+      });
     }
     if (dateFrom && dateTo) {
       idQb.andWhere('project.start_date BETWEEN :dateFrom AND :dateTo', {
@@ -94,7 +98,10 @@ export class ProjectTypeormRepository implements IProjectRepository {
           WHERE pr.project_id = project.id_project)`,
         'min_responsible_name',
       );
-      idQb.orderBy('"min_responsible_name"', sortOrder === 'DESC' ? 'DESC' : 'ASC');
+      idQb.orderBy(
+        '"min_responsible_name"',
+        sortOrder === 'DESC' ? 'DESC' : 'ASC',
+      );
     } else {
       const SORTABLE_FIELDS = [
         'name_project',
@@ -110,8 +117,14 @@ export class ProjectTypeormRepository implements IProjectRepository {
         'privacy_level',
       ] as const;
 
-      if (sortBy && (SORTABLE_FIELDS as ReadonlyArray<string>).includes(sortBy)) {
-        idQb.orderBy('project.' + sortBy, sortOrder === 'DESC' ? 'DESC' : 'ASC');
+      if (
+        sortBy &&
+        (SORTABLE_FIELDS as ReadonlyArray<string>).includes(sortBy)
+      ) {
+        idQb.orderBy(
+          'project.' + sortBy,
+          sortOrder === 'DESC' ? 'DESC' : 'ASC',
+        );
       } else {
         idQb.orderBy('project.created_at', 'DESC');
       }
@@ -124,21 +137,30 @@ export class ProjectTypeormRepository implements IProjectRepository {
     countQb.orderBy(); // ponytail: limpia ORDER BY para evitar conflicto con DISTINCT
     const total = Number((await countQb.getRawOne())?.cnt ?? 0);
 
-    const idRows = await idQb.skip(skip).take(limit).getRawMany<{ id: number }>();
+    const idRows = await idQb
+      .skip(skip)
+      .take(limit)
+      .getRawMany<{ id: number }>();
     const ids = idRows.map((r) => Number(r.id));
 
-    const data = ids.length > 0
-      ? await this.repo.find({
-          where: { id_project: In(ids) },
-          relations: { responsibles: { user: true } },
-        })
-      : [];
+    const data =
+      ids.length > 0
+        ? await this.repo.find({
+            where: { id_project: In(ids) },
+            relations: { responsibles: { user: true } },
+          })
+        : [];
 
     // ponytail: re-sort in-memory to preserve ORDER BY from idQb (find with IN doesn't guarantee order)
     const orderMap = new Map(ids.map((id, i) => [id, i]));
-    data.sort((a, b) => (orderMap.get(a.id_project) ?? 0) - (orderMap.get(b.id_project) ?? 0));
+    data.sort(
+      (a, b) =>
+        (orderMap.get(a.id_project) ?? 0) - (orderMap.get(b.id_project) ?? 0),
+    );
 
-    const progressMap = await this.getProgressForProjects(data.map((p) => p.id_project));
+    const progressMap = await this.getProgressForProjects(
+      data.map((p) => p.id_project),
+    );
     for (const project of data) {
       project.progress = progressMap.get(project.id_project) ?? 0;
     }

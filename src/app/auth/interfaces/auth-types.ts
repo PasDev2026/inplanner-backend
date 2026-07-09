@@ -15,6 +15,7 @@ export interface UserProfile {
   dni: string;
   fullName: string;
   roles: string[];
+  sedesIds: number[];
 }
 
 export interface LoginResponse {

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from '../../users/entities/user.entity';
 import { UserRoleEntity } from '../../users/entities/user-role.entity';
@@ -22,6 +23,7 @@ export class LoginUseCase {
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepo: IRefreshTokenRepository,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(loginDto: LoginDto): Promise<LoginResponse> {
@@ -29,7 +31,7 @@ export class LoginUseCase {
 
     const user = await this.userRepository.findOne({
       where: { username },
-      relations: { userRoles: true },
+      relations: { userRoles: true, userSedes: true },
     });
 
     if (!user) {
@@ -53,7 +55,9 @@ export class LoginUseCase {
       roles,
     };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_EXPIRES_IN'),
+    });
     const refreshToken = await this.generateRefreshToken(user.id_user);
 
     return {
@@ -66,6 +70,7 @@ export class LoginUseCase {
         dni: user.dni,
         fullName,
         roles,
+        sedesIds: user.userSedes?.map((us) => Number(us.sede_id)) ?? [],
       },
       accessToken,
       refreshToken,
