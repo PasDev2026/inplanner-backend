@@ -53,23 +53,27 @@ export class ProjectTypeormRepository implements IProjectRepository {
         search: '%' + search + '%',
       });
     }
-    if (status !== undefined) {
-      idQb.andWhere('project.status = :status', { status });
+    if (status) {
+      const statuses = status.split(',').map(Number);
+      idQb.andWhere('project.status IN (:...statuses)', { statuses });
     }
-    if (priority !== undefined) {
-      idQb.andWhere('project.priority = :priority', { priority });
+    if (priority) {
+      const priorities = priority.split(',').map(Number);
+      idQb.andWhere('project.priority IN (:...priorities)', { priorities });
     }
-    if (sede_id !== undefined) {
-      idQb.andWhere('project.sede_id = :sedeId', { sedeId: sede_id });
+    if (sede_id) {
+      const sedeIds = sede_id.split(',').map(Number);
+      idQb.andWhere('project.sede_id IN (:...sedeIds)', { sedeIds });
     }
     if (manager_id !== undefined) {
       idQb.andWhere('project.manager_id = :managerId', {
         managerId: manager_id,
       });
     }
-    if (responsible_id !== undefined) {
-      idQb.andWhere('responsibles.user_id = :responsibleId', {
-        responsibleId: responsible_id,
+    if (responsible_id) {
+      const responsibleIds = responsible_id.split(',').map(Number);
+      idQb.andWhere('responsibles.user_id IN (:...responsibleIds)', {
+        responsibleIds,
       });
     }
     if (dateFrom && dateTo) {

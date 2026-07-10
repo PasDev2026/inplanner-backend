@@ -49,32 +49,29 @@ export class QueryUserDto {
   estado?: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'Filtrar por ID de área',
+    example: '1,3',
+    description: 'Filtrar por área (IDs separados por coma)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  area_id?: number;
+  @IsString()
+  area_id?: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'Filtrar por ID de rol',
+    example: '1,2',
+    description: 'Filtrar por rol (IDs separados por coma)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  rol_id?: number;
+  @IsString()
+  rol_id?: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'Filtrar por ID de sede',
+    example: '1,3',
+    description: 'Filtrar por sede (IDs separados por coma)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  sede_id?: number;
+  @IsString()
+  sede_id?: string;
 }

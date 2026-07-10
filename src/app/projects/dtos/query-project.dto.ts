@@ -33,35 +33,32 @@ export class QueryProjectDto {
   search?: string;
 
   @ApiProperty({
-    example: 1,
+    example: '0,1,2',
     description:
-      'Filtrar por estado (0=Planificación, 1=Activo, 2=En espera, 3=Completado, 4=Cancelado)',
+      'Filtrar por estado (coma-separado: 0=Planificación, 1=Activo, 2=En espera, 3=Completado, 4=Cancelado)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  status?: number;
+  @IsString()
+  status?: string;
 
   @ApiProperty({
-    example: 2,
-    description: 'Filtrar por prioridad',
+    example: '1,2',
+    description: 'Filtrar por prioridad (coma-separado)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  priority?: number;
+  @IsString()
+  priority?: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'Filtrar por sede (ID de centralizado.sede)',
+    example: '1,3',
+    description: 'Filtrar por sede (IDs separados por coma)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  sede_id?: number;
+  @IsString()
+  sede_id?: string;
 
   @ApiProperty({
     example: 5,
@@ -74,14 +71,13 @@ export class QueryProjectDto {
   manager_id?: number;
 
   @ApiProperty({
-    example: 3,
-    description: 'Filtrar por responsable (ID de usuario)',
+    example: '3,7',
+    description: 'Filtrar por responsable (IDs separados por coma)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  responsible_id?: number;
+  @IsString()
+  responsible_id?: string;
 
   @ApiProperty({
     example: '2026-01-01',

@@ -32,7 +32,7 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Crear tarea',
     description:
@@ -68,7 +68,7 @@ export class TasksController {
   }
 
   @Patch(':id')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Actualizar tarea',
     description: 'Actualiza los datos de una tarea existente',
@@ -80,7 +80,7 @@ export class TasksController {
   }
 
   @Delete(':id')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Eliminar tarea',
     description: 'Elimina una tarea del sistema',
@@ -92,7 +92,7 @@ export class TasksController {
   }
 
   @Post(':taskId/assignments')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Asignar usuario a tarea',
     description: 'Asigna un usuario a una tarea',
@@ -119,7 +119,7 @@ export class TasksController {
   }
 
   @Delete(':taskId/assignments/:userId')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Quitar asignacion',
     description: 'Elimina la asignacion de un usuario a una tarea',

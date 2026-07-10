@@ -13,10 +13,25 @@ export class UpdateTaskStatusUseCase {
 
   async execute(id: number, dto: UpdateTaskStatusDto): Promise<TaskEntity> {
     await this.taskRepo.update(id, dto);
+
+    if (dto.status === 4) {
+      await this.cascadeComplete(id);
+    }
+
     const task = await this.taskRepo.findOneById(id);
     if (!task) {
       throw new NotFoundException('Tarea con ID ' + id + ' no encontrada');
     }
     return task;
+  }
+
+  private async cascadeComplete(taskId: number): Promise<void> {
+    const children = await this.taskRepo.findChildren(taskId);
+    for (const child of children) {
+      if (child.status !== 4) {
+        await this.taskRepo.update(child.id_task, { status: 4 });
+      }
+      await this.cascadeComplete(child.id_task);
+    }
   }
 }

@@ -55,14 +55,17 @@ export class UserTypeormRepository implements IUsersRepository {
     if (estado !== undefined) {
       qb.andWhere('user.estado = :estado', { estado: estado === 'true' });
     }
-    if (area_id !== undefined) {
-      qb.andWhere('area.id_area = :areaId', { areaId: area_id });
+    if (area_id) {
+      const areaIds = area_id.split(',').map(Number);
+      qb.andWhere('area.id_area IN (:...areaIds)', { areaIds });
     }
-    if (rol_id !== undefined) {
-      qb.andWhere('userRoles.rol_id = :rolId', { rolId: rol_id });
+    if (rol_id) {
+      const rolIds = rol_id.split(',').map(Number);
+      qb.andWhere('userRoles.rol_id IN (:...rolIds)', { rolIds });
     }
-    if (sede_id !== undefined) {
-      qb.andWhere('userSedes.sede_id = :sedeId', { sedeId: sede_id });
+    if (sede_id) {
+      const sedeIds = sede_id.split(',').map(Number);
+      qb.andWhere('userSedes.sede_id IN (:...sedeIds)', { sedeIds });
     }
 
     qb.orderBy('user.username', 'ASC');
