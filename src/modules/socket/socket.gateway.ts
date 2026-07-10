@@ -7,6 +7,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import * as process from 'node:process';
@@ -39,10 +40,11 @@ export class SocketGateway
     private readonly socketService: SocketService,
     private readonly jwtService: JwtService,
     private readonly authService: AuthService,
+    private readonly configService: ConfigService,
   ) {
-    this.inactivityTimeout = parseInt(
-      process.env.SOCKET_INACTIVITY_TIMEOUT ?? '900000',
-      10,
+    this.inactivityTimeout = this.configService.get<number>(
+      'SOCKET_INACTIVITY_TIMEOUT',
+      900000,
     );
   }
 
@@ -71,7 +73,7 @@ export class SocketGateway
       const payload = await this.jwtService.verifyAsync<{ sub: number }>(
         token,
         {
-          secret: process.env.JWT_SECRET,
+          secret: this.configService.get<string>('JWT_SECRET'),
         },
       );
 

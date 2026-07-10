@@ -12,7 +12,7 @@ const envSchema = z
     PORT: z.coerce.number().default(3000),
     NODE_ENV: z.enum(['development', 'production', 'lax']).default('lax'),
     DB_SCHEMA: z.string().default('inplanner'),
-    SOCKET_INACTIVITY_TIMEOUT: z.coerce.number().default(900000),
+    SOCKET_INACTIVITY_TIMEOUT: z.coerce.number().default(28800000),
 
     // Future ML
     ML_API_URL: z.string().default('http://localhost:8000'),

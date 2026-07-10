@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import * as process from 'node:process';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
@@ -28,12 +29,16 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parseDurationToMs } from '../../common/helpers/parse-duration';
 
 @ApiTags('Autenticación')
 @UseGuards(AuthGuard)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Public()
   @Post('login')
@@ -56,7 +61,9 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 15 * 60 * 1000,
+      maxAge: parseDurationToMs(
+        this.configService.getOrThrow<string>('JWT_EXPIRES_IN'),
+      ),
     });
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
@@ -101,7 +108,9 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 15 * 60 * 1000,
+      maxAge: parseDurationToMs(
+        this.configService.getOrThrow<string>('JWT_EXPIRES_IN'),
+      ),
     });
 
     return result;

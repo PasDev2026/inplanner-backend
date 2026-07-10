@@ -151,7 +151,7 @@ export class TasksController {
   }
 
   @Patch(':id/status')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Actualizar estado',
     description:
