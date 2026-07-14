@@ -3,7 +3,8 @@ import { ProjectResponsibleEntity } from '../../entities/project-responsible.ent
 export class ProjectResponsibleResponseDto {
   project_id: number;
   user_id: number;
-  user_name?: string;
+  name?: string;
+  apellido_paterno?: string;
 
   static fromEntity(
     entity: ProjectResponsibleEntity,
@@ -11,7 +12,8 @@ export class ProjectResponsibleResponseDto {
     const dto = new ProjectResponsibleResponseDto();
     dto.project_id = entity.project_id;
     dto.user_id = entity.user_id;
-    dto.user_name = entity.user?.username;
+    dto.name = entity.user?.name;
+    dto.apellido_paterno = entity.user?.apellido_paterno;
     return dto;
   }
 

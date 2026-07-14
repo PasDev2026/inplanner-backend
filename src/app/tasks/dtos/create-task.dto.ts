@@ -91,4 +91,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsInt()
   priority?: number;
+
+  @ApiProperty({
+    example: 1000,
+    description: 'Posición para ordenamiento',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  position?: number;
 }

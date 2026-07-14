@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, IsNull, Repository } from 'typeorm';
 import { TaskEntity } from '../entities/task.entity';
 import type { ITaskRepository } from '../repository/task-repository.interface';
 import { QueryTaskDto } from '../dtos/query-task.dto';
@@ -48,10 +48,10 @@ export class TaskTypeormRepository implements ITaskRepository {
 
     const [data, total] = await this.repo.findAndCount({
       where,
-      relations: { assignments: { user: true } },
+      relations: { assignments: { user: true }, notes: true },
       skip,
       take,
-      order: { id_task: 'ASC' },
+      order: { position: 'ASC' },
     });
 
     if (data.length > 0) {
@@ -100,7 +100,7 @@ export class TaskTypeormRepository implements ITaskRepository {
     const children = await this.repo.find({
       where: { parent_task_id: parentId },
       relations: { assignments: { user: true } },
-      order: { id_task: 'ASC' },
+      order: { position: 'ASC' },
     });
 
     if (children.length > 0) {
@@ -108,6 +108,48 @@ export class TaskTypeormRepository implements ITaskRepository {
     }
 
     return children;
+  }
+
+  async findSiblings(params: {
+    projectId: number;
+    status: number;
+    parentTaskId: number | null;
+  }): Promise<TaskEntity[]> {
+    return this.repo.find({
+      where: {
+        project_id: params.projectId,
+        status: params.status,
+        parent_task_id: params.parentTaskId ?? IsNull(),
+      },
+      order: { position: 'ASC' },
+    });
+  }
+
+  async updatePosition(id: number, position: number): Promise<void> {
+    await this.repo.update(id, { position });
+  }
+
+  async getMaxPosition(params: {
+    projectId: number;
+    status: number;
+    parentTaskId: number | null;
+  }): Promise<number> {
+    type MaxResult = { max: number | null };
+    const result = await this.repo
+      .createQueryBuilder('task')
+      .select('MAX(task.position)', 'max')
+      .where('task.project_id = :projectId', { projectId: params.projectId })
+      .andWhere('task.status = :status', { status: params.status })
+      .andWhere(
+        params.parentTaskId === null
+          ? 'task.parent_task_id IS NULL'
+          : 'task.parent_task_id = :parentTaskId',
+        params.parentTaskId !== null
+          ? { parentTaskId: params.parentTaskId }
+          : {},
+      )
+      .getRawOne<MaxResult>();
+    return result?.max ?? 0;
   }
 
   private async attachSubtasksCount(tasks: TaskEntity[]): Promise<void> {

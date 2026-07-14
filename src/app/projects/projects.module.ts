@@ -14,6 +14,7 @@ import { DeleteProjectUseCase } from './use-cases/delete-project.use-case';
 import { CreateResponsibleUseCase } from './use-cases/create-responsible.use-case';
 import { FindResponsiblesUseCase } from './use-cases/find-responsibles.use-case';
 import { RemoveResponsibleUseCase } from './use-cases/remove-responsible.use-case';
+import { ReorderProjectsUseCase } from './use-cases/reorder-projects.use-case';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 
@@ -36,6 +37,7 @@ import { ProjectsService } from './projects.service';
     CreateResponsibleUseCase,
     FindResponsiblesUseCase,
     RemoveResponsibleUseCase,
+    ReorderProjectsUseCase,
     ProjectsService,
   ],
   exports: [TypeOrmModule],

@@ -22,6 +22,14 @@ export class CreateTaskUseCase {
       status: dto.status ?? 0,
       start_date: dto.start_date ? new Date(dto.start_date) : new Date(),
     });
+    if (task.position === undefined || task.position === null) {
+      task.position =
+        (await this.taskRepo.getMaxPosition({
+          projectId: dto.project_id,
+          status: task.status,
+          parentTaskId: dto.parent_task_id ?? null,
+        })) + 1000;
+    }
     const saved = await this.taskRepo.save(task);
 
     await this.assignmentRepo.create({

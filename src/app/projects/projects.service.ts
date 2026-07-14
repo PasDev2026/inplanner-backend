@@ -7,10 +7,12 @@ import { DeleteProjectUseCase } from './use-cases/delete-project.use-case';
 import { CreateResponsibleUseCase } from './use-cases/create-responsible.use-case';
 import { FindResponsiblesUseCase } from './use-cases/find-responsibles.use-case';
 import { RemoveResponsibleUseCase } from './use-cases/remove-responsible.use-case';
+import { ReorderProjectsUseCase } from './use-cases/reorder-projects.use-case';
 import { CreateProjectDto } from './dtos/create-project.dto';
 import { UpdateProjectDto } from './dtos/update-project.dto';
 import { QueryProjectDto } from './dtos/query-project.dto';
 import { CreateProjectResponsibleDto } from './dtos/create-project-responsible.dto';
+import { ReorderProjectDto } from './dtos/reorder-projects.dto';
 import { ProjectResponseDto } from './dtos/response/project-response.dto';
 import { ProjectResponsibleResponseDto } from './dtos/response/project-responsible-response.dto';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
@@ -27,6 +29,7 @@ export class ProjectsService {
     private readonly createResponsibleUseCase: CreateResponsibleUseCase,
     private readonly findResponsiblesUseCase: FindResponsiblesUseCase,
     private readonly removeResponsibleUseCase: RemoveResponsibleUseCase,
+    private readonly reorderProjectsUseCase: ReorderProjectsUseCase,
   ) {}
 
   async create(dto: CreateProjectDto): Promise<ProjectResponseDto> {
@@ -54,6 +57,15 @@ export class ProjectsService {
 
   async remove(id: number): Promise<void> {
     await this.deleteProjectUseCase.execute(id);
+  }
+
+  async reorder(dto: ReorderProjectDto): Promise<void> {
+    await this.reorderProjectsUseCase.execute(dto);
+  }
+
+  async findKanban(user?: JwtPayload): Promise<ProjectResponseDto[]> {
+    const projects = await this.findProjectsUseCase.findAll(user);
+    return ProjectResponseDto.fromEntityList(projects);
   }
 
   async createResponsible(

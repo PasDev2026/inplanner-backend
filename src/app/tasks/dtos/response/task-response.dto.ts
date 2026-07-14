@@ -13,10 +13,11 @@ export class TaskResponseDto {
   due_date: Date | null;
   status: number | null;
   priority: number | null;
+  position: number;
   created_at: Date;
   updated_at: Date;
   subtasks_count?: number;
-  assignments?: { task_id: number; user_id: number; user_name?: string }[];
+  assignments?: { task_id: number; user_id: number; user_name?: string; name?: string; apellido_paterno?: string | null }[];
   notes?: {
     id_note: number;
     content: string;
@@ -45,6 +46,7 @@ export class TaskResponseDto {
     dto.due_date = entity.due_date;
     dto.status = entity.status;
     dto.priority = entity.priority;
+    dto.position = entity.position;
     dto.created_at = entity.created_at;
     dto.updated_at = entity.updated_at;
     dto.subtasks_count = entity.subtasks_count;
@@ -53,6 +55,8 @@ export class TaskResponseDto {
         task_id: a.task_id,
         user_id: a.user_id,
         user_name: a.user?.username,
+        name: a.user?.name,
+        apellido_paterno: a.user?.apellido_paterno,
       }));
     }
     if (entity.notes) {

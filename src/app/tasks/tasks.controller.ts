@@ -23,6 +23,7 @@ import { UpdateTaskDto } from './dtos/update-task.dto';
 import { QueryTaskDto } from './dtos/query-task.dto';
 import { CreateTaskAssignmentDto } from './dtos/create-task-assignment.dto';
 import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
+import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Tareas')
@@ -65,6 +66,17 @@ export class TasksController {
   @ApiResponse({ status: 404, description: 'Tarea no encontrada' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tasksService.findOne(id);
+  }
+
+  @Patch('reorder')
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Reordenar tarea',
+    description: 'Reordena una tarea dentro de su columna',
+  })
+  @ApiResponse({ status: 200, description: 'Tarea reordenada' })
+  reorder(@Body() dto: ReorderTaskDto) {
+    return this.tasksService.reorder(dto);
   }
 
   @Patch(':id')
