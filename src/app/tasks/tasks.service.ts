@@ -9,11 +9,13 @@ import { CreateAssignmentUseCase } from './use-cases/create-assignment.use-case'
 import { FindAssignmentsUseCase } from './use-cases/find-assignments.use-case';
 import { RemoveAssignmentUseCase } from './use-cases/remove-assignment.use-case';
 import { FindChildrenUseCase } from './use-cases/find-children.use-case';
+import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 import { QueryTaskDto } from './dtos/query-task.dto';
 import { CreateTaskAssignmentDto } from './dtos/create-task-assignment.dto';
 import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
+import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
 import { TaskResponseDto } from './dtos/response/task-response.dto';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 
@@ -30,6 +32,7 @@ export class TasksService {
     private readonly findAssignmentsUseCase: FindAssignmentsUseCase,
     private readonly removeAssignmentUseCase: RemoveAssignmentUseCase,
     private readonly findChildrenUseCase: FindChildrenUseCase,
+    private readonly reorderTasksUseCase: ReorderTasksUseCase,
   ) {}
 
   async create(
@@ -90,5 +93,9 @@ export class TasksService {
   async findChildren(taskId: number): Promise<TaskResponseDto[]> {
     const children = await this.findChildrenUseCase.execute(taskId);
     return TaskResponseDto.fromEntityList(children);
+  }
+
+  async reorder(dto: ReorderTaskDto): Promise<void> {
+    await this.reorderTasksUseCase.execute(dto);
   }
 }

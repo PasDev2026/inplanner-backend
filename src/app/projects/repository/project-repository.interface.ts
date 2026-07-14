@@ -17,4 +17,7 @@ export interface IProjectRepository {
   delete(project: ProjectEntity): Promise<void>;
   isUserInSameArea(userId: number, managerId: number): Promise<boolean>;
   isUserInSede(userId: number, sedeId: number): Promise<boolean>;
+  findSiblings(status: number): Promise<ProjectEntity[]>;
+  updatePosition(id: number, position: number): Promise<void>;
+  findAll(user?: JwtPayload): Promise<ProjectEntity[]>;
 }

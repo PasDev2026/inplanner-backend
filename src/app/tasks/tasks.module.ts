@@ -16,6 +16,7 @@ import { CreateAssignmentUseCase } from './use-cases/create-assignment.use-case'
 import { FindAssignmentsUseCase } from './use-cases/find-assignments.use-case';
 import { RemoveAssignmentUseCase } from './use-cases/remove-assignment.use-case';
 import { FindChildrenUseCase } from './use-cases/find-children.use-case';
+import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 
@@ -38,6 +39,7 @@ import { TasksService } from './tasks.service';
     FindAssignmentsUseCase,
     RemoveAssignmentUseCase,
     FindChildrenUseCase,
+    ReorderTasksUseCase,
     TasksService,
   ],
   exports: [TypeOrmModule],

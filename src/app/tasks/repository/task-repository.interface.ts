@@ -12,4 +12,15 @@ export interface ITaskRepository {
   update(id: number, partial: Partial<TaskEntity>): Promise<void>;
   delete(task: TaskEntity): Promise<void>;
   findChildren(parentId: number): Promise<TaskEntity[]>;
+  findSiblings(params: {
+    projectId: number;
+    status: number;
+    parentTaskId: number | null;
+  }): Promise<TaskEntity[]>;
+  updatePosition(id: number, position: number): Promise<void>;
+  getMaxPosition(params: {
+    projectId: number;
+    status: number;
+    parentTaskId: number | null;
+  }): Promise<number>;
 }

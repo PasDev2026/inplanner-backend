@@ -7,6 +7,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { UserEntity } from '../../users/entities/user.entity';
 import { ProjectResponsibleEntity } from './project-responsible.entity';
@@ -41,6 +42,10 @@ export class ProjectEntity {
 
   @Column({ type: 'smallint', nullable: true })
   priority: number;
+
+  @Index('idx_projects_status_position', ['status', 'position'])
+  @Column({ type: 'double precision', default: 0 })
+  position: number;
 
   @Column({ type: 'smallint', default: PrivacyLevel.PUBLICO })
   privacy_level: PrivacyLevel;

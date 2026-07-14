@@ -51,6 +51,9 @@ export class TaskEntity {
   @Column({ type: 'smallint', nullable: true })
   priority: number;
 
+  @Column({ type: 'double precision', default: 0 })
+  position: number;
+
   @CreateDateColumn()
   created_at: Date;
 

@@ -22,6 +22,7 @@ import { CreateProjectDto } from './dtos/create-project.dto';
 import { UpdateProjectDto } from './dtos/update-project.dto';
 import { QueryProjectDto } from './dtos/query-project.dto';
 import { CreateProjectResponsibleDto } from './dtos/create-project-responsible.dto';
+import { ReorderProjectDto } from './dtos/reorder-projects.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/interfaces/auth-types';
 
@@ -53,6 +54,17 @@ export class ProjectsController {
     return this.projectsService.findAll(query, user);
   }
 
+  @Get('kanban')
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Listar proyectos para Kanban',
+    description: 'Obtiene todos los proyectos sin paginación para la vista Kanban',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de proyectos para Kanban' })
+  findKanban(@CurrentUser() user: JwtPayload) {
+    return this.projectsService.findKanban(user);
+  }
+
   @Get(':id')
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
@@ -67,6 +79,17 @@ export class ProjectsController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.projectsService.findOne(id, user);
+  }
+
+  @Patch('reorder_project')
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Reordenar proyecto',
+    description: 'Reordena un proyecto dentro de su columna en el Kanban',
+  })
+  @ApiResponse({ status: 200, description: 'Proyecto reordenado' })
+  reorder(@Body() dto: ReorderProjectDto) {
+    return this.projectsService.reorder(dto);
   }
 
   @Patch(':id')

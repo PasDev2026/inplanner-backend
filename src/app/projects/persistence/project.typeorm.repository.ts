@@ -231,6 +231,40 @@ export class ProjectTypeormRepository implements IProjectRepository {
     return map;
   }
 
+  async findSiblings(status: number): Promise<ProjectEntity[]> {
+    return this.repo.find({
+      where: { status },
+      order: { position: 'ASC' },
+    });
+  }
+
+  async updatePosition(id: number, position: number): Promise<void> {
+    await this.repo.update(id, { position });
+  }
+
+  async findAll(user?: JwtPayload): Promise<ProjectEntity[]> {
+    const qb = this.repo.createQueryBuilder('project')
+      .leftJoinAndSelect('project.responsibles', 'responsibles')
+      .leftJoinAndSelect('responsibles.user', 'responsibleUser')
+      .orderBy('project.status', 'ASC')
+      .addOrderBy('project.position', 'ASC');
+
+    if (user && !user.roles.includes(Role.SUPER_ADMIN)) {
+      this.applyPrivacyFilter(qb, user.sub);
+    }
+
+    const data = await qb.getMany();
+
+    const progressMap = await this.getProgressForProjects(
+      data.map((p) => p.id_project),
+    );
+    for (const project of data) {
+      project.progress = progressMap.get(project.id_project) ?? 0;
+    }
+
+    return data;
+  }
+
   private applyPrivacyFilter(
     qb: SelectQueryBuilder<ProjectEntity>,
     userId: number,

@@ -13,6 +13,7 @@ export class ProjectResponseDto {
   status: number | null;
   priority: number | null;
   privacy_level: number;
+  position: number;
   created_at: Date;
   updated_at: Date;
   progress: number;
@@ -30,6 +31,7 @@ export class ProjectResponseDto {
     dto.status = entity.status;
     dto.priority = entity.priority;
     dto.privacy_level = entity.privacy_level;
+    dto.position = entity.position ?? 0;
     dto.created_at = entity.created_at;
     dto.updated_at = entity.updated_at;
     dto.progress = entity.progress ?? 0;
