@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import 'dotenv/config';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const envSchema = z
@@ -47,7 +47,5 @@ export const envs = {
   jwtPublicKeyPath: process.env.JWT_PUBLIC_KEY_PATH || './keys/jwt-public.key',
 };
 
-export const jwtPublicKey: string = readFileSync(
-  join(process.cwd(), envs.jwtPublicKeyPath),
-  'utf8',
-);
+const keyPath = join(__dirname, '../../keys/jwt-public.key');
+export const jwtPublicKey: string = readFileSync(keyPath, 'utf8');
