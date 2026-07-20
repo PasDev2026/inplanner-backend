@@ -1,4 +1,4 @@
 export interface ActiveConnection {
-  userId: number;
+  userId: string;
   lastActivity: Date;
 }

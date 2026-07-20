@@ -93,7 +93,7 @@ export class TaskTypeormRepository implements ITaskRepository {
   }
 
   async delete(task: TaskEntity): Promise<void> {
-    await this.repo.remove(task);
+    await this.repo.delete(task.id_task);
   }
 
   async findChildren(parentId: number): Promise<TaskEntity[]> {

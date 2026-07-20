@@ -9,7 +9,7 @@ export class RemoveAssignmentUseCase {
     private readonly assignmentRepo: ITaskAssignmentRepository,
   ) {}
 
-  async execute(taskId: number, userId: number): Promise<void> {
+  async execute(taskId: number, userId: string): Promise<void> {
     const assignment = await this.assignmentRepo.findOneByTaskAndUser(
       taskId,
       userId,

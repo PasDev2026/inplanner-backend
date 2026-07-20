@@ -25,11 +25,11 @@ export class ProjectEntity {
   @Column({ type: 'text', nullable: true })
   description_project: string;
 
-  @Column({ type: 'bigint', nullable: true })
-  sede_id: number;
+  @Column({ type: 'uuid', nullable: true })
+  sede_id: string;
 
-  @Column()
-  manager_id: number;
+  @Column({ type: 'uuid' })
+  manager_id: string;
 
   @Column({ type: 'timestamp', nullable: true })
   start_date: Date;
@@ -37,7 +37,7 @@ export class ProjectEntity {
   @Column({ type: 'timestamp', nullable: true })
   due_date: Date;
 
-  @Column({ type: 'smallint', nullable: true })
+  @Column({ type: 'smallint', default: 0 })
   status: number;
 
   @Column({ type: 'smallint', nullable: true })

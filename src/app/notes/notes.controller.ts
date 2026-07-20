@@ -37,7 +37,7 @@ export class NotesController {
       'Crea una nueva nota en una tarea. El usuario autenticado se asigna como autor automaticamente',
   })
   @ApiResponse({ status: 201, description: 'Nota creada exitosamente' })
-  create(@Body() dto: CreateNoteDto, @CurrentUser('sub') userId: number) {
+  create(@Body() dto: CreateNoteDto, @CurrentUser('sub') userId: string) {
     return this.notesService.create(dto, userId);
   }
 

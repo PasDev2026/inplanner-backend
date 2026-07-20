@@ -33,11 +33,11 @@ export class TaskEntity {
   @Column({ type: 'int', nullable: true })
   parent_task_id: number;
 
-  @Column()
-  created_by_id: number;
+  @Column({ type: 'uuid' })
+  created_by_id: string;
 
-  @Column({ type: 'int', nullable: true })
-  completed_by_id: number;
+  @Column({ type: 'uuid', nullable: true })
+  completed_by_id: string;
 
   @Column({ type: 'timestamp', nullable: true })
   start_date: Date;
@@ -51,7 +51,7 @@ export class TaskEntity {
   @Column({ type: 'smallint', nullable: true })
   priority: number;
 
-  @Column({ type: 'double precision', default: 0 })
+  @Column({ type: 'double precision', default: 1000 })
   position: number;
 
   @CreateDateColumn()

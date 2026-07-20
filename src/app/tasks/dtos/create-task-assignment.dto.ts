@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTaskAssignmentDto {
@@ -12,10 +12,10 @@ export class CreateTaskAssignmentDto {
   task_id?: number;
 
   @ApiProperty({
-    example: 2,
-    description: 'ID del usuario a asignar a la tarea',
+    example: 'uuid-del-usuario',
+    description: 'UUID del usuario a asignar a la tarea',
   })
-  @IsInt()
+  @IsString()
   @IsNotEmpty()
-  user_id: number;
+  user_id: string;
 }

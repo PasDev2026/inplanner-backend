@@ -9,7 +9,7 @@ export class RemoveResponsibleUseCase {
     private readonly responsibleRepo: IProjectResponsibleRepository,
   ) {}
 
-  async execute(projectId: number, userId: number): Promise<void> {
+  async execute(projectId: number, userId: string): Promise<void> {
     const responsible = await this.responsibleRepo.findOneByProjectAndUser(
       projectId,
       userId,

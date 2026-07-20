@@ -32,7 +32,7 @@ export class QueryUserDto {
 
   @ApiProperty({
     example: 'Juan',
-    description: 'Texto de búsqueda por nombre, email o username',
+    description: 'Texto de búsqueda por nombre, email o documento',
     required: false,
   })
   @IsOptional()
@@ -58,17 +58,8 @@ export class QueryUserDto {
   area_id?: string;
 
   @ApiProperty({
-    example: '1,2',
-    description: 'Filtrar por rol (IDs separados por coma)',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  rol_id?: string;
-
-  @ApiProperty({
-    example: '1,3',
-    description: 'Filtrar por sede (IDs separados por coma)',
+    example: '60b660be-9c29-4e99-81d9-3665f88590b5',
+    description: 'Filtrar por sede (UUIDs separados por coma)',
     required: false,
   })
   @IsOptional()

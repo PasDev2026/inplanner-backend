@@ -1,11 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
-import { UserSedeEntity } from './entities/user-sede.entity';
-import { UserRoleEntity } from './entities/user-role.entity';
 import { USERS_REPOSITORY } from './repository/user-repository.interface';
 import { UserTypeormRepository } from './persistence/user.typeorm.repository';
-import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { FindUsersUseCase } from './use-cases/find-users.use-case';
 import { FindUserUseCase } from './use-cases/find-user.use-case';
 import { UpdateUserUseCase } from './use-cases/update-user.use-case';
@@ -15,13 +12,10 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserEntity, UserSedeEntity, UserRoleEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([UserEntity])],
   controllers: [UsersController],
   providers: [
     { provide: USERS_REPOSITORY, useClass: UserTypeormRepository },
-    CreateUserUseCase,
     FindUsersUseCase,
     FindUserUseCase,
     FindAvailableUsersUseCase,

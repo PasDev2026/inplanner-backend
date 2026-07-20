@@ -23,8 +23,8 @@ export class NoteEntity {
   task_id: number;
 
   @Index()
-  @Column()
-  created_by_id: number;
+  @Column({ type: 'uuid' })
+  created_by_id: string;
 
   @CreateDateColumn()
   created_at: Date;

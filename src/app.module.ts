@@ -7,6 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import databaseConfig from './config/database.config';
 import { CentralizadoModule } from './app/centralizado/centralizado.module';
+import { CentralizadoHttpModule } from './libs/centralizado-http/centralizado.module';
 import { AreasModule } from './app/areas/areas.module';
 import { UsersModule } from './app/users/users.module';
 import { ProjectsModule } from './app/projects/projects.module';
@@ -47,6 +48,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
     CentralizadoModule,
+    CentralizadoHttpModule,
     AreasModule,
     UsersModule,
     ProjectsModule,

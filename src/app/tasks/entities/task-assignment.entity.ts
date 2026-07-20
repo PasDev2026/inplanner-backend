@@ -7,8 +7,8 @@ export class TaskAssignmentEntity {
   @PrimaryColumn()
   task_id: number;
 
-  @PrimaryColumn()
-  user_id: number;
+  @PrimaryColumn({ type: 'uuid' })
+  user_id: string;
 
   @ManyToOne(() => TaskEntity, (t) => t.assignments)
   @JoinColumn({ name: 'task_id' })

@@ -13,14 +13,7 @@ export type AvailableUser = Pick<
 export interface IUsersRepository {
   save(user: UserEntity): Promise<UserEntity>;
   findWithPagination(query: QueryUserDto): Promise<PaginatedResult<UserEntity>>;
-  findByIdWithRelations(id: number): Promise<UserEntity | null>;
-  softDelete(id: number): Promise<void>;
-  findByCredentials(
-    username: string,
-    email: string,
-    dni: string,
-  ): Promise<UserEntity | null>;
-  replaceSedes(userId: number, sedeIds: number[]): Promise<void>;
-  replaceRoles(userId: number, roleIds: number[]): Promise<void>;
+  findByIdWithRelations(id: string): Promise<UserEntity | null>;
+  softDelete(id: string): Promise<void>;
   findAvailable(): Promise<AvailableUser[]>;
 }

@@ -5,7 +5,7 @@ export class NoteResponseDto {
   id_note: number;
   content: string;
   task_id: number;
-  created_by_id: number;
+  created_by_id: string;
   created_at: Date;
   updated_at: Date;
   author_name?: string;
@@ -18,7 +18,7 @@ export class NoteResponseDto {
     dto.created_by_id = entity.created_by_id;
     dto.created_at = entity.created_at;
     dto.updated_at = entity.updated_at;
-    dto.author_name = entity.createdBy?.username;
+    dto.author_name = entity.createdBy?.name;
     return dto;
   }
 

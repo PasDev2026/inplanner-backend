@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import * as process from 'node:process';
+import type { JwtPayload } from '../../app/auth/interfaces/auth-types';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -32,12 +32,9 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: number }>(
-        token,
-        {
-          secret: process.env.JWT_SECRET,
-        },
-      );
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        algorithms: ['RS256'],
+      });
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException('Token inválido o expirado');
@@ -49,7 +46,6 @@ export class AuthGuard implements CanActivate {
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     if (type === 'Bearer') return token;
-
     return (request as { cookies?: Record<string, string> }).cookies
       ?.access_token;
   }

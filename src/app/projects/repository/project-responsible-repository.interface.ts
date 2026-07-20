@@ -8,10 +8,10 @@ export const PROJECT_RESPONSIBLE_REPOSITORY =
 export interface IProjectResponsibleRepository {
   findOneByProjectAndUser(
     projectId: number,
-    userId: number,
+    userId: string,
   ): Promise<ProjectResponsibleEntity | null>;
   create(dto: CreateProjectResponsibleDto): Promise<ProjectResponsibleEntity>;
   findByProjectId(projectId: number): Promise<ProjectResponsibleEntity[]>;
   delete(responsible: ProjectResponsibleEntity): Promise<void>;
-  countByProjectAndUser(projectId: number, userId: number): Promise<number>;
+  countByProjectAndUser(projectId: number, userId: string): Promise<number>;
 }

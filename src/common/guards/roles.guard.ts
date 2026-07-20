@@ -4,7 +4,7 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 import { Role } from '../enums/role.enum';
 
 interface RequestWithUser {
-  user: { roles: string[] };
+  user: { roles: { rol_codigo: string }[] };
 }
 
 @Injectable()
@@ -24,6 +24,7 @@ export class RolesGuard implements CanActivate {
 
     if (!user?.roles) return false;
 
-    return requiredRoles.some((role) => user.roles.includes(role));
+    const userRoleCodes = user.roles.map((r) => r.rol_codigo);
+    return requiredRoles.some((role) => userRoleCodes.includes(role));
   }
 }
