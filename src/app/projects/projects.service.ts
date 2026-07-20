@@ -82,7 +82,7 @@ export class ProjectsService {
     return ProjectResponsibleResponseDto.fromEntityList(list);
   }
 
-  async removeResponsible(projectId: number, userId: number): Promise<void> {
+  async removeResponsible(projectId: number, userId: string): Promise<void> {
     await this.removeResponsibleUseCase.execute(projectId, userId);
   }
 }

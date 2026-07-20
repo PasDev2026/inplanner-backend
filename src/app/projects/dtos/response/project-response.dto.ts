@@ -6,8 +6,8 @@ export class ProjectResponseDto {
   id_project: number;
   name_project: string;
   description_project: string | null;
-  sede_id: number | null;
-  manager_id: number;
+  sede_id: string | null;
+  manager_id: string;
   start_date: Date | null;
   due_date: Date | null;
   status: number | null;

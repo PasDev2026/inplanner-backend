@@ -15,7 +15,7 @@ export class CreateTaskUseCase {
     private readonly assignmentRepo: ITaskAssignmentRepository,
   ) {}
 
-  async execute(dto: CreateTaskDto, createdById: number): Promise<TaskEntity> {
+  async execute(dto: CreateTaskDto, createdById: string): Promise<TaskEntity> {
     const task = new TaskEntity();
     Object.assign(task, dto, {
       created_by_id: createdById,

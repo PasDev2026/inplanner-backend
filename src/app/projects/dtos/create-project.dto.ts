@@ -30,21 +30,21 @@ export class CreateProjectDto {
   description_project?: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'ID del usuario responsable del proyecto',
+    example: 'uuid-del-usuario',
+    description: 'UUID del usuario responsable del proyecto',
   })
-  @IsInt()
+  @IsString()
   @IsNotEmpty()
-  manager_id: number;
+  manager_id: string;
 
   @ApiProperty({
-    example: 1,
-    description: 'ID de la sede asociada (centralizado)',
+    example: 'uuid-de-la-sede',
+    description: 'UUID de la sede asociada (centralizado)',
     required: false,
   })
   @IsOptional()
-  @IsInt()
-  sede_id?: number;
+  @IsString()
+  sede_id?: string;
 
   @ApiProperty({
     example: '2026-06-01',

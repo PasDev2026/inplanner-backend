@@ -61,14 +61,13 @@ export class QueryProjectDto {
   sede_id?: string;
 
   @ApiProperty({
-    example: 5,
-    description: 'Filtrar por manager (ID de usuario)',
+    example: 'uuid-del-usuario',
+    description: 'Filtrar por manager (UUID de usuario)',
     required: false,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  manager_id?: number;
+  @IsString()
+  manager_id?: string;
 
   @ApiProperty({
     example: '3,7',

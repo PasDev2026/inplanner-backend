@@ -47,13 +47,13 @@ export class CreateTaskDto {
   parent_task_id?: number;
 
   @ApiProperty({
-    example: 1,
-    description: 'ID del usuario que completó la tarea',
+    example: 'uuid-del-usuario',
+    description: 'UUID del usuario que completó la tarea',
     required: false,
   })
   @IsOptional()
-  @IsInt()
-  completed_by_id?: number;
+  @IsString()
+  completed_by_id?: string;
 
   @ApiProperty({
     example: '2026-06-15',

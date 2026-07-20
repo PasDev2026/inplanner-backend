@@ -1,32 +1,28 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Expose } from 'class-transformer';
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AreaEntity } from '../../areas/entities/area.entity';
-import { UserSedeEntity } from './user-sede.entity';
-import { UserRoleEntity } from './user-role.entity';
 
 @Entity('users')
 export class UserEntity {
-  @PrimaryGeneratedColumn()
-  id_user: number;
+  @PrimaryColumn({ type: 'uuid' })
+  id_user: string;
 
-  @Column({ length: 100, unique: true })
-  username: string;
+  @Column({ type: 'uuid', unique: true })
+  persona_uuid: string;
 
-  @Exclude()
-  @Column({ length: 255 })
-  password: string;
+  @Column({ length: 20, unique: true })
+  numero_documento: string;
 
   @Expose({ groups: ['user-detail'] })
-  @Column({ length: 100, unique: true })
+  @Column({ length: 100, nullable: true })
   email: string;
 
   @Column({ length: 100 })
@@ -39,12 +35,12 @@ export class UserEntity {
   apellido_materno: string;
 
   @Expose({ groups: ['user-detail'] })
-  @Column({ length: 20, unique: true })
-  dni: string;
-
-  @Expose({ groups: ['user-detail'] })
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string;
+
+  @Expose({ groups: ['user-detail'] })
+  @Column({ type: 'uuid', nullable: true })
+  sede_id: string | null;
 
   @Expose({ groups: ['user-detail'] })
   @Column({ default: true })
@@ -62,12 +58,4 @@ export class UserEntity {
   @ManyToOne(() => AreaEntity)
   @JoinColumn({ name: 'area_id' })
   area: AreaEntity;
-
-  @Expose({ groups: ['user-detail'] })
-  @OneToMany(() => UserSedeEntity, (us) => us.user)
-  userSedes: UserSedeEntity[];
-
-  @Expose({ groups: ['user-detail'] })
-  @OneToMany(() => UserRoleEntity, (ur) => ur.user)
-  userRoles: UserRoleEntity[];
 }

@@ -22,7 +22,7 @@ export class NotesService {
 
   async create(
     dto: CreateNoteDto,
-    createdById: number,
+    createdById: string,
   ): Promise<NoteResponseDto> {
     const note = await this.createNoteUseCase.execute(dto, createdById);
     return NoteResponseDto.fromEntity(note);

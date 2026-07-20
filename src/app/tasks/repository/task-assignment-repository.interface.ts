@@ -8,7 +8,7 @@ export const TASK_ASSIGNMENT_REPOSITORY =
 export interface ITaskAssignmentRepository {
   findOneByTaskAndUser(
     taskId: number,
-    userId: number,
+    userId: string,
   ): Promise<TaskAssignmentEntity | null>;
   create(dto: CreateTaskAssignmentDto): Promise<TaskAssignmentEntity>;
   findByTaskId(taskId: number): Promise<TaskAssignmentEntity[]>;

@@ -58,7 +58,7 @@ export class ProjectsController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({
     summary: 'Listar proyectos para Kanban',
-    description: 'Obtiene todos los proyectos sin paginación para la vista Kanban',
+    description: 'Obtiene todos los proyectos sin paginacion para ver el kaban',
   })
   @ApiResponse({ status: 200, description: 'Lista de proyectos para Kanban' })
   findKanban(@CurrentUser() user: JwtPayload) {
@@ -161,7 +161,7 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Responsable eliminado' })
   removeResponsible(
     @Param('projectId', ParseIntPipe) projectId: number,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: string,
   ) {
     return this.projectsService.removeResponsible(projectId, userId);
   }

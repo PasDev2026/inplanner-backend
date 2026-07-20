@@ -15,8 +15,7 @@ export interface IProjectRepository {
   findOneById(id: number): Promise<ProjectEntity | null>;
   update(id: number, partial: Partial<ProjectEntity>): Promise<void>;
   delete(project: ProjectEntity): Promise<void>;
-  isUserInSameArea(userId: number, managerId: number): Promise<boolean>;
-  isUserInSede(userId: number, sedeId: number): Promise<boolean>;
+  isUserInSameArea(userId: string, managerId: string): Promise<boolean>;
   findSiblings(status: number): Promise<ProjectEntity[]>;
   updatePosition(id: number, position: number): Promise<void>;
   findAll(user?: JwtPayload): Promise<ProjectEntity[]>;

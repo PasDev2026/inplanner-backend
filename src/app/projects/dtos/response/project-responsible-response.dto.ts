@@ -2,7 +2,7 @@ import { ProjectResponsibleEntity } from '../../entities/project-responsible.ent
 
 export class ProjectResponsibleResponseDto {
   project_id: number;
-  user_id: number;
+  user_id: string;
   name?: string;
   apellido_paterno?: string;
 

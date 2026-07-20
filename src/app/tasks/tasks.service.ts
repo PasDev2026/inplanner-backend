@@ -37,7 +37,7 @@ export class TasksService {
 
   async create(
     dto: CreateTaskDto,
-    createdById: number,
+    createdById: string,
   ): Promise<TaskResponseDto> {
     const task = await this.createTaskUseCase.execute(dto, createdById);
     return TaskResponseDto.fromEntity(task);
@@ -82,11 +82,10 @@ export class TasksService {
     return list.map((a) => ({
       task_id: a.task_id,
       user_id: a.user_id,
-      user_name: a.user?.username,
     }));
   }
 
-  async removeAssignment(taskId: number, userId: number): Promise<void> {
+  async removeAssignment(taskId: number, userId: string): Promise<void> {
     await this.removeAssignmentUseCase.execute(taskId, userId);
   }
 

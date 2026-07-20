@@ -7,8 +7,8 @@ export class ProjectResponsibleEntity {
   @PrimaryColumn()
   project_id: number;
 
-  @PrimaryColumn()
-  user_id: number;
+  @PrimaryColumn({ type: 'uuid' })
+  user_id: string;
 
   @ManyToOne(() => ProjectEntity, (p) => p.responsibles)
   @JoinColumn({ name: 'project_id' })

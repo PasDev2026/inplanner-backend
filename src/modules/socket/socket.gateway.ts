@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import * as process from 'node:process';
+import type { JwtPayload } from '../../app/auth/interfaces/auth-types';
 import { SocketService } from './socket.service';
 import { AuthService } from '../../app/auth/auth.service';
 
@@ -58,11 +59,9 @@ export class SocketGateway
 
   async handleConnection(client: Socket): Promise<void> {
     try {
-      const cookies = client.handshake.headers.cookie || '';
-      const token = cookies
-        .split('; ')
-        .find((c) => c.startsWith('access_token='))
-        ?.split('=')[1];
+      const token =
+        client.handshake.auth?.token ??
+        client.handshake.headers.authorization?.replace('Bearer ', '');
 
       if (!token) {
         client.emit('error', { message: 'Token no proporcionado' });
@@ -70,12 +69,7 @@ export class SocketGateway
         return;
       }
 
-      const payload = await this.jwtService.verifyAsync<{ sub: number }>(
-        token,
-        {
-          secret: this.configService.get<string>('JWT_SECRET'),
-        },
-      );
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
       this.socketService.addConnection(client.id, payload.sub);
       void client.join(`user_${payload.sub}`);
@@ -145,9 +139,7 @@ export class SocketGateway
         });
         socket?.disconnect(true);
 
-        await this.authService.revokeAllTokens(userId).catch(() => {
-          this.logger.warn(`Error al revocar tokens del usuario ${userId}`);
-        });
+        this.logger.log(`Sesión expirada — usuario ${userId}`);
       }
     }
   }

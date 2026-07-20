@@ -7,7 +7,6 @@ import { QueryProjectDto } from '../dtos/query-project.dto';
 import { PaginatedResult } from '../../../common/interfaces/pagination.interface';
 import { DB_SCHEMA } from '../../../config/schema';
 import { PrivacyLevel } from '../../../common/enums/privacy-level.enum';
-import { Role } from '../../../common/enums/role.enum';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
 
 @Injectable()
@@ -62,7 +61,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       idQb.andWhere('project.priority IN (:...priorities)', { priorities });
     }
     if (sede_id) {
-      const sedeIds = sede_id.split(',').map(Number);
+      const sedeIds = sede_id.split(',');
       idQb.andWhere('project.sede_id IN (:...sedeIds)', { sedeIds });
     }
     if (manager_id !== undefined) {
@@ -71,7 +70,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       });
     }
     if (responsible_id) {
-      const responsibleIds = responsible_id.split(',').map(Number);
+      const responsibleIds = responsible_id.split(',');
       idQb.andWhere('responsibles.user_id IN (:...responsibleIds)', {
         responsibleIds,
       });
@@ -91,8 +90,11 @@ export class ProjectTypeormRepository implements IProjectRepository {
       });
     }
 
-    if (user && !user.roles.includes(Role.SUPER_ADMIN)) {
-      this.applyPrivacyFilter(idQb, user.sub);
+    if (
+      user &&
+      !user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')
+    ) {
+      this.applyPrivacyFilter(idQb, user);
     }
 
     if (sortBy === 'responsible_name') {
@@ -139,6 +141,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
     countQb.skip(undefined);
     countQb.take(undefined);
     countQb.orderBy(); // ponytail: limpia ORDER BY para evitar conflicto con DISTINCT
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const total = Number((await countQb.getRawOne())?.cnt ?? 0);
 
     const idRows = await idQb
@@ -195,20 +198,12 @@ export class ProjectTypeormRepository implements IProjectRepository {
     await this.repo.remove(project);
   }
 
-  async isUserInSameArea(userId: number, managerId: number): Promise<boolean> {
+  async isUserInSameArea(userId: string, managerId: string): Promise<boolean> {
     const sql =
       `SELECT 1 FROM ${DB_SCHEMA}.users u1 ` +
       `JOIN ${DB_SCHEMA}.users u2 ON u1.area_id = u2.area_id ` +
       `WHERE u1.id_user = $1 AND u2.id_user = $2`;
     const result: unknown[] = await this.repo.query(sql, [userId, managerId]);
-    return result.length > 0;
-  }
-
-  async isUserInSede(userId: number, sedeId: number): Promise<boolean> {
-    const sql =
-      `SELECT 1 FROM ${DB_SCHEMA}.user_sedes ` +
-      `WHERE user_id = $1 AND sede_id = $2`;
-    const result: unknown[] = await this.repo.query(sql, [userId, sedeId]);
     return result.length > 0;
   }
 
@@ -243,14 +238,18 @@ export class ProjectTypeormRepository implements IProjectRepository {
   }
 
   async findAll(user?: JwtPayload): Promise<ProjectEntity[]> {
-    const qb = this.repo.createQueryBuilder('project')
+    const qb = this.repo
+      .createQueryBuilder('project')
       .leftJoinAndSelect('project.responsibles', 'responsibles')
       .leftJoinAndSelect('responsibles.user', 'responsibleUser')
       .orderBy('project.status', 'ASC')
       .addOrderBy('project.position', 'ASC');
 
-    if (user && !user.roles.includes(Role.SUPER_ADMIN)) {
-      this.applyPrivacyFilter(qb, user.sub);
+    if (
+      user &&
+      !user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')
+    ) {
+      this.applyPrivacyFilter(qb, user);
     }
 
     const data = await qb.getMany();
@@ -267,12 +266,14 @@ export class ProjectTypeormRepository implements IProjectRepository {
 
   private applyPrivacyFilter(
     qb: SelectQueryBuilder<ProjectEntity>,
-    userId: number,
+    user: JwtPayload,
   ): void {
+    const userId = user.sub;
     qb.leftJoin('project.manager', 'manager');
 
     const where =
-      '(project.privacy_level = :pub ' +
+      '(project.manager_id = :userId ' +
+      'OR project.privacy_level = :pub ' +
       'OR (project.privacy_level = :priv AND project.manager_id = :userId) ' +
       'OR (project.privacy_level = :ment AND ( ' +
       'project.manager_id = :userId ' +
@@ -287,11 +288,10 @@ export class ProjectTypeormRepository implements IProjectRepository {
       `SELECT u.area_id FROM ${DB_SCHEMA}.users u WHERE u.id_user = :userId ` +
       `)) ` +
       `OR (project.privacy_level = :sede ` +
-      `AND EXISTS ( ` +
-      `SELECT 1 FROM ${DB_SCHEMA}.user_sedes us ` +
-      `WHERE us.user_id = :userId AND us.sede_id = project.sede_id ` +
-      `) ` +
+      `AND project.sede_id = ANY(:userSedes) ` +
       `))`;
+
+    const userSedes = user.roles.filter((r) => r.sede_id).map((r) => r.sede_id);
 
     qb.andWhere(where, {
       pub: PrivacyLevel.PUBLICO,
@@ -300,6 +300,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       area: PrivacyLevel.SOLO_AREA,
       sede: PrivacyLevel.SOLO_SEDE,
       userId,
+      userSedes: userSedes.length > 0 ? userSedes : [null],
     });
   }
 }

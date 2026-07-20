@@ -4,15 +4,15 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
-    example: 'admin',
-    description: 'Nombre de usuario para iniciar sesión',
+    example: '12345678',
+    description: 'Número de documento para iniciar sesión',
   })
   @IsString()
-  @IsNotEmpty({ message: 'El nombre de usuario es requerido' })
-  username: string;
+  @IsNotEmpty({ message: 'El número de documento es requerido' })
+  numero_documento: string;
 
   @ApiProperty({
-    example: 'admin123',
+    example: '********',
     description: 'Contraseña del usuario (mín. 6 caracteres)',
   })
   @IsString()

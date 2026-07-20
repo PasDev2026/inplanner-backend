@@ -7,29 +7,25 @@ import {
   Patch,
   Post,
   Req,
-  Res,
   UseGuards,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
-import * as process from 'node:process';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
-import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { CheckPasswordDto } from './dtos/check-password.dto';
-import { UpdatePasswordDto } from './dtos/update-password.dto';
+import { UserEntity } from '../users/entities/user.entity';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
-import { parseDurationToMs } from '../../common/helpers/parse-duration';
+import type { JwtPayload } from './interfaces/auth-types';
 
 @ApiTags('Autenticación')
 @UseGuards(AuthGuard)
@@ -37,7 +33,8 @@ import { parseDurationToMs } from '../../common/helpers/parse-duration';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly configService: ConfigService,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   @Public()
@@ -47,86 +44,40 @@ export class AuthController {
   @ApiOperation({
     summary: 'Iniciar sesión',
     description:
-      'Autentica al usuario con username y contraseña, devuelve access token + refresh token',
+      'Autentica al usuario contra centralizado con número de documento y contraseña',
   })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.login(loginDto);
-
-    res.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: parseDurationToMs(
-        this.configService.getOrThrow<string>('JWT_EXPIRES_IN'),
-      ),
-    });
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/api/v1/auth',
-      maxAge: 14 * 60 * 60 * 1000,
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { refreshToken, ...userData } = result;
-    return userData;
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
   @Public()
-  @Post('refresh-token')
+  @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({
     summary: 'Renovar access token',
-    description:
-      'Genera un nuevo access token a partir de un refresh token válido',
   })
   @ApiResponse({ status: 200, description: 'Token renovado exitosamente' })
-  @ApiResponse({
-    status: 401,
-    description: 'Refresh token inválido, revocado o expirado',
-  })
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const refreshToken = (req as unknown as { cookies: Record<string, string> })
-      .cookies?.refresh_token;
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token no proporcionado');
-    }
-
-    const result = await this.authService.refresh({ refreshToken });
-
-    res.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: parseDurationToMs(
-        this.configService.getOrThrow<string>('JWT_EXPIRES_IN'),
-      ),
-    });
-
-    return result;
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    return this.authService.refresh({ refresh_token: refreshToken });
   }
 
   @Get('me')
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Obtener perfil',
-    description:
-      'Devuelve los datos del usuario autenticado mediante el token JWT',
+    description: 'Devuelve los datos del usuario autenticado desde el JWT',
   })
   @ApiResponse({ status: 200, description: 'Perfil del usuario' })
   @ApiResponse({ status: 401, description: 'Token inválido o expirado' })
-  async me(@CurrentUser('sub') userId: number) {
-    return this.authService.getProfile(userId);
+  async me(@CurrentUser() user: JwtPayload) {
+    const dbUser = await this.userRepo.findOne({
+      where: { id_user: user.sub },
+      select: { email: true },
+    });
+    return { ...user, email: dbUser?.email ?? null };
   }
 
   @Post('logout')
@@ -135,36 +86,11 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Cerrar sesión',
-    description: 'Revoca el refresh token activo del usuario',
   })
   @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
-  @ApiResponse({ status: 401, description: 'Refresh token inválido' })
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = (req as unknown as { cookies: Record<string, string> })
-      .cookies?.refresh_token;
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token no proporcionado');
-    }
-
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/api/v1/auth' });
-    return this.authService.logout({ refreshToken });
-  }
-
-  @Patch('profile')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({
-    summary: 'Actualizar perfil',
-    description: 'Actualiza el nombre y/o email del usuario autenticado',
-  })
-  @ApiResponse({ status: 200, description: 'Perfil actualizado exitosamente' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async updateProfile(
-    @Body() dto: UpdateProfileDto,
-    @CurrentUser('sub') userId: number,
-  ) {
-    return this.authService.updateProfile(userId, dto);
+  async logout(@Req() req: Request) {
+    const token = this.extractToken(req);
+    return this.authService.logout(token);
   }
 
   @Patch('password')
@@ -173,35 +99,27 @@ export class AuthController {
   @ApiOperation({
     summary: 'Cambiar contraseña',
     description:
-      'Cambia la contraseña del usuario autenticado validando la contraseña actual',
+      'Cambia la contraseña contra centralizado validando la contraseña actual',
   })
   @ApiResponse({
     status: 200,
     description: 'Contraseña actualizada exitosamente',
   })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
-  async updatePassword(
-    @Body() dto: UpdatePasswordDto,
-    @CurrentUser('sub') userId: number,
+  async changePassword(
+    @Body()
+    dto: {
+      password_actual: string;
+      password_nueva: string;
+      repetir_password: string;
+    },
+    @Req() req: Request,
   ) {
-    return this.authService.updatePassword(userId, dto);
+    const token = this.extractToken(req);
+    return this.authService.changePassword(dto, token);
   }
 
-  @Post('check-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({
-    summary: 'Verificar contraseña',
-    description:
-      'Verifica que la contraseña proporcionada coincida con la del usuario autenticado',
-  })
-  @ApiResponse({ status: 200, description: 'Contraseña correcta' })
-  @ApiResponse({ status: 401, description: 'Contraseña incorrecta' })
-  async checkPassword(
-    @Body() dto: CheckPasswordDto,
-    @CurrentUser('sub') userId: number,
-  ) {
-    return this.authService.checkPassword(userId, dto);
+  private extractToken(req: Request): string {
+    const [type, token] = req.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' && token ? token : '';
   }
 }

@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -40,7 +41,7 @@ export class TasksController {
       'Crea una nueva tarea. El usuario autenticado se asigna como creador autom\u00e1ticamente',
   })
   @ApiResponse({ status: 201, description: 'Tarea creada exitosamente' })
-  create(@Body() dto: CreateTaskDto, @CurrentUser('sub') userId: number) {
+  create(@Body() dto: CreateTaskDto, @CurrentUser('sub') userId: string) {
     return this.tasksService.create(dto, userId);
   }
 
@@ -145,7 +146,7 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Asignacion eliminada' })
   removeAssignment(
     @Param('taskId', ParseIntPipe) taskId: number,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     return this.tasksService.removeAssignment(taskId, userId);
   }

@@ -14,7 +14,7 @@ export class TaskAssignmentTypeormRepository implements ITaskAssignmentRepositor
 
   async findOneByTaskAndUser(
     taskId: number,
-    userId: number,
+    userId: string,
   ): Promise<TaskAssignmentEntity | null> {
     return this.repo.findOne({
       where: { task_id: taskId, user_id: userId },

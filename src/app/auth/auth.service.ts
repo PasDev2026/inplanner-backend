@@ -1,70 +1,98 @@
-import { Injectable } from '@nestjs/common';
-import { LoginUseCase } from './use-cases/login.use-case';
-import { RefreshUseCase } from './use-cases/refresh.use-case';
-import { GetProfileUseCase } from './use-cases/get-profile.use-case';
-import { LogoutUseCase } from './use-cases/logout.use-case';
-import { UpdateProfileUseCase } from './use-cases/update-profile.use-case';
-import { UpdatePasswordUseCase } from './use-cases/update-password.use-case';
-import { CheckPasswordUseCase } from './use-cases/check-password.use-case';
-import { RevokeTokensUseCase } from './use-cases/revoke-tokens.use-case';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AuthCentralizadoService } from '../../libs/services/auth-centralizado.service';
 import { LoginDto } from './dtos/login.dto';
-import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { UpdateProfileDto } from './dtos/update-profile.dto';
-import { CheckPasswordDto } from './dtos/check-password.dto';
-import { UpdatePasswordDto } from './dtos/update-password.dto';
-import type { LoginResponse } from './interfaces/auth-types';
+import { UserEntity } from '../users/entities/user.entity';
+import type {
+  JwtPayload,
+  LoginResponse,
+  RefreshResponse,
+} from './interfaces/auth-types';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
-    private readonly loginUseCase: LoginUseCase,
-    private readonly refreshUseCase: RefreshUseCase,
-    private readonly getProfileUseCase: GetProfileUseCase,
-    private readonly logoutUseCase: LogoutUseCase,
-    private readonly updateProfileUseCase: UpdateProfileUseCase,
-    private readonly updatePasswordUseCase: UpdatePasswordUseCase,
-    private readonly checkPasswordUseCase: CheckPasswordUseCase,
-    private readonly revokeTokensUseCase: RevokeTokensUseCase,
+    private readonly authCentralizado: AuthCentralizadoService,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<LoginResponse> {
-    return this.loginUseCase.execute(loginDto);
+  async login(dto: LoginDto): Promise<LoginResponse> {
+    const response = await this.authCentralizado.login(dto);
+    const jwt = this.decodeJwt(response.access_token);
+    if (jwt) {
+      response.usuario.nombres = jwt.nombres;
+      response.usuario.apellido_paterno = jwt.apellido_paterno;
+      await this.syncLocalUser(jwt, response.usuario.email ?? undefined).catch(
+        (err) => this.logger.error('Error syncing local user', err),
+      );
+    }
+    return response;
   }
 
-  async refresh(dto: RefreshTokenDto): Promise<{ accessToken: string }> {
-    return this.refreshUseCase.execute(dto);
+  async refresh(dto: { refresh_token: string }): Promise<RefreshResponse> {
+    const response = await this.authCentralizado.refresh(dto);
+    const jwt = this.decodeJwt(response.access_token);
+    if (jwt) {
+      response.usuario.nombres = jwt.nombres;
+      response.usuario.apellido_paterno = jwt.apellido_paterno;
+    }
+    return response;
   }
 
-  async getProfile(userId: number) {
-    return this.getProfileUseCase.execute(userId);
+  async logout(accessToken: string): Promise<void> {
+    return this.authCentralizado.logout(accessToken);
   }
 
-  async logout(dto: RefreshTokenDto): Promise<{ message: string }> {
-    return this.logoutUseCase.execute(dto);
+  async changePassword(
+    dto: {
+      password_actual: string;
+      password_nueva: string;
+      repetir_password: string;
+    },
+    accessToken: string,
+  ) {
+    return this.authCentralizado.changePassword(dto, accessToken);
   }
 
-  async revokeAllTokens(userId: number): Promise<void> {
-    return this.revokeTokensUseCase.execute(userId);
+  private decodeJwt(token: string): JwtPayload | null {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(
+        Buffer.from(payload, 'base64').toString('utf8'),
+      ) as JwtPayload;
+    } catch {
+      return null;
+    }
   }
 
-  async updateProfile(
-    userId: number,
-    dto: UpdateProfileDto,
-  ): Promise<{ message: string }> {
-    return this.updateProfileUseCase.execute(userId, dto);
-  }
-
-  async updatePassword(
-    userId: number,
-    dto: UpdatePasswordDto,
-  ): Promise<{ message: string }> {
-    return this.updatePasswordUseCase.execute(userId, dto);
-  }
-
-  async checkPassword(
-    userId: number,
-    dto: CheckPasswordDto,
-  ): Promise<{ message: string }> {
-    return this.checkPasswordUseCase.execute(userId, dto);
+  private async syncLocalUser(jwt: JwtPayload, email?: string): Promise<void> {
+    const sede_id = jwt.roles?.[0]?.sede_id || null;
+    const existing = await this.userRepo.findOneBy({
+      persona_uuid: jwt.persona_id,
+    });
+    if (existing) {
+      await this.userRepo.update(existing.id_user, {
+        numero_documento: jwt.numero_documento,
+        name: jwt.nombres,
+        apellido_paterno: jwt.apellido_paterno,
+        email,
+        sede_id,
+      });
+    } else {
+      const user = this.userRepo.create({
+        id_user: jwt.sub,
+        persona_uuid: jwt.persona_id,
+        numero_documento: jwt.numero_documento,
+        name: jwt.nombres,
+        apellido_paterno: jwt.apellido_paterno,
+        email,
+        sede_id,
+      });
+      await this.userRepo.save(user);
+    }
   }
 }

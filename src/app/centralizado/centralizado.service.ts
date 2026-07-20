@@ -1,26 +1,16 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { ICentralizadoRepository } from './repository/centralizado-repository.interface';
-import { CENTRALIZADO_REPOSITORY } from './repository/centralizado-repository.interface';
+import { Injectable } from '@nestjs/common';
+import { CentralizadoApiService } from '../../libs/services/centralizado-api.service';
 
 @Injectable()
 export class CentralizadoService {
-  constructor(
-    @Inject(CENTRALIZADO_REPOSITORY)
-    private readonly repo: ICentralizadoRepository,
-  ) {}
+  constructor(private readonly api: CentralizadoApiService) {}
 
-  async findAll() {
+  async findAll(bearerToken: string) {
     const [roles, sedes] = await Promise.all([
-      this.repo.findActiveRoles(),
-      this.repo.findActiveSedes(),
+      this.api.getRoles(bearerToken),
+      this.api.getSedes(bearerToken),
     ]);
 
-    return {
-      roles: roles.map((r) => ({ id: Number(r.id_rol), nombre: r.nom_rol })),
-      sedes: sedes.map((s) => ({
-        id: Number(s.id_sede),
-        nombre: s.nom_sede.replace(/^INSALUD\s+/i, '').trim(),
-      })),
-    };
+    return { roles, sedes };
   }
 }

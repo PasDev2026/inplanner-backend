@@ -11,7 +11,7 @@ export class CreateNoteUseCase {
     private readonly noteRepo: INoteRepository,
   ) {}
 
-  async execute(dto: CreateNoteDto, createdById: number): Promise<NoteEntity> {
+  async execute(dto: CreateNoteDto, createdById: string): Promise<NoteEntity> {
     const note = new NoteEntity();
     Object.assign(note, dto, { created_by_id: createdById });
     return this.noteRepo.save(note);

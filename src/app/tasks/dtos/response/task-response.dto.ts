@@ -7,8 +7,8 @@ export class TaskResponseDto {
   task_description: string | null;
   project_id: number;
   parent_task_id: number | null;
-  created_by_id: number;
-  completed_by_id: number | null;
+  created_by_id: string;
+  completed_by_id: string | null;
   start_date: Date | null;
   due_date: Date | null;
   status: number | null;
@@ -17,16 +17,16 @@ export class TaskResponseDto {
   created_at: Date;
   updated_at: Date;
   subtasks_count?: number;
-  assignments?: { task_id: number; user_id: number; user_name?: string; name?: string; apellido_paterno?: string | null }[];
+  assignments?: { task_id: number; user_id: string; name?: string; apellido_paterno?: string | null }[];
   notes?: {
     id_note: number;
     content: string;
     task_id: number;
-    created_by_id: number;
+    created_by_id: string;
     created_at: Date;
     updated_at: Date;
     createdBy?: {
-      id_user: number;
+      id_user: string;
       name: string;
       apellido_paterno: string | null;
       email: string;
@@ -54,7 +54,6 @@ export class TaskResponseDto {
       dto.assignments = entity.assignments.map((a) => ({
         task_id: a.task_id,
         user_id: a.user_id,
-        user_name: a.user?.username,
         name: a.user?.name,
         apellido_paterno: a.user?.apellido_paterno,
       }));

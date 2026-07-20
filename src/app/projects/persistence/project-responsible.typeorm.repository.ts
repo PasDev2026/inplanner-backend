@@ -14,7 +14,7 @@ export class ProjectResponsibleTypeormRepository implements IProjectResponsibleR
 
   async findOneByProjectAndUser(
     projectId: number,
-    userId: number,
+    userId: string,
   ): Promise<ProjectResponsibleEntity | null> {
     return this.repo.findOne({
       where: { project_id: projectId, user_id: userId },
@@ -43,7 +43,7 @@ export class ProjectResponsibleTypeormRepository implements IProjectResponsibleR
 
   async countByProjectAndUser(
     projectId: number,
-    userId: number,
+    userId: string,
   ): Promise<number> {
     return this.repo.count({
       where: { project_id: projectId, user_id: userId },

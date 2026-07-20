@@ -10,7 +10,7 @@ export class FindUserUseCase {
     private readonly userRepo: IUsersRepository,
   ) {}
 
-  async execute(id: number): Promise<UserEntity> {
+  async execute(id: string): Promise<UserEntity> {
     const user = await this.userRepo.findByIdWithRelations(id);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);

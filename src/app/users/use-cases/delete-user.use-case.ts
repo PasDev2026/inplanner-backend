@@ -11,7 +11,7 @@ export class DeleteUserUseCase {
     private readonly socketService: SocketService,
   ) {}
 
-  async execute(id: number): Promise<void> {
+  async execute(id: string): Promise<void> {
     const user = await this.userRepo.findByIdWithRelations(id);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);

@@ -31,7 +31,7 @@ export class AreasController {
   constructor(private readonly areasService: AreasService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.JEFATURA)
+  @Roles(Role.SUPER_ADMINISTRADOR, Role.JEFATURA)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: 'Crear area',
@@ -71,7 +71,7 @@ export class AreasController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.JEFATURA)
+  @Roles(Role.SUPER_ADMINISTRADOR, Role.JEFATURA)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: 'Actualizar area',
@@ -89,7 +89,7 @@ export class AreasController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMINISTRADOR)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: 'Eliminar area (soft delete)',

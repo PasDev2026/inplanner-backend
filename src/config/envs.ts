@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import 'dotenv/config';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const envSchema = z
   .object({
@@ -7,12 +10,14 @@ const envSchema = z
     JWT_SECRET: z.string().min(1),
     JWT_EXPIRES_IN: z.string().min(1),
     FRONTEND_URL: z.string().url(),
+    CENTRALIZADO_API_URL: z.string().url(),
 
     // Optional with defaults
     PORT: z.coerce.number().default(3000),
-    NODE_ENV: z.enum(['development', 'production', 'lax']).default('lax'),
+    NODE_ENV: z.enum(['development', 'production']).default('development'),
     DB_SCHEMA: z.string().default('inplanner'),
     SOCKET_INACTIVITY_TIMEOUT: z.coerce.number().default(28800000),
+    JWT_PUBLIC_KEY_PATH: z.string().default('./keys/jwt-public.key'),
 
     // Future ML
     ML_API_URL: z.string().default('http://localhost:8000'),
@@ -36,3 +41,13 @@ export function validateEnv(config: Record<string, unknown>) {
 }
 
 export type Env = z.infer<typeof envSchema>;
+
+export const envs = {
+  centralizadoApiUrl: process.env.CENTRALIZADO_API_URL || '',
+  jwtPublicKeyPath: process.env.JWT_PUBLIC_KEY_PATH || './keys/jwt-public.key',
+};
+
+export const jwtPublicKey: string = readFileSync(
+  join(process.cwd(), envs.jwtPublicKeyPath),
+  'utf8',
+);

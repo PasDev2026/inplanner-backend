@@ -1,4 +1,4 @@
-import { IsInt, IsOptional } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateTaskStatusDto {
@@ -11,12 +11,12 @@ export class UpdateTaskStatusDto {
   status: number;
 
   @ApiProperty({
-    example: 1,
+    example: 'uuid-del-usuario',
     description:
-      'ID del usuario que completó la tarea (se asigna al cambiar a estado 4)',
+      'UUID del usuario que completó la tarea (se asigna al cambiar a estado 4)',
     required: false,
   })
   @IsOptional()
-  @IsInt()
-  completed_by_id?: number;
+  @IsString()
+  completed_by_id?: string;
 }
