@@ -15,6 +15,7 @@ import { TasksModule } from './app/tasks/tasks.module';
 import { NotesModule } from './app/notes/notes.module';
 import { AuthModule } from './app/auth/auth.module';
 import { SocketModule } from './modules/socket/socket.module';
+import { DashboardModule } from './app/dashboard/dashboard.module';
 import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -56,6 +57,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     NotesModule,
     AuthModule,
     SocketModule,
+    DashboardModule,
   ],
   providers: [
     {
