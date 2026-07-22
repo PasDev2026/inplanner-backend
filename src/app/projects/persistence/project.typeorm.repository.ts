@@ -43,10 +43,6 @@ export class ProjectTypeormRepository implements IProjectRepository {
     const idQb = this.repo.createQueryBuilder('project');
     idQb.select('project.id_project', 'id');
 
-    // Use leftJoin (not leftJoinAndSelect) to avoid DISTINCT wrapper
-    idQb.leftJoin('project.responsibles', 'responsibles');
-    idQb.leftJoin('responsibles.user', 'responsibleUser');
-
     if (search) {
       idQb.andWhere('project.name_project ILIKE :search', {
         search: '%' + search + '%',
@@ -71,9 +67,10 @@ export class ProjectTypeormRepository implements IProjectRepository {
     }
     if (responsible_id) {
       const responsibleIds = responsible_id.split(',');
-      idQb.andWhere('responsibles.user_id IN (:...responsibleIds)', {
-        responsibleIds,
-      });
+      idQb.andWhere(
+        `EXISTS (SELECT 1 FROM ${DB_SCHEMA}.project_responsibles pr WHERE pr.project_id = project.id_project AND pr.user_id IN (:...responsibleIds))`,
+        { responsibleIds },
+      );
     }
     if (dateFrom && dateTo) {
       idQb.andWhere('project.start_date BETWEEN :dateFrom AND :dateTo', {
@@ -136,19 +133,9 @@ export class ProjectTypeormRepository implements IProjectRepository {
       }
     }
 
-    const countQb = idQb.clone();
-    countQb.select('COUNT(DISTINCT project.id_project)', 'cnt');
-    countQb.skip(undefined);
-    countQb.take(undefined);
-    countQb.orderBy(); // ponytail: limpia ORDER BY para evitar conflicto con DISTINCT
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const total = Number((await countQb.getRawOne())?.cnt ?? 0);
-
-    const idRows = await idQb
-      .skip(skip)
-      .take(limit)
-      .getRawMany<{ id: number }>();
-    const ids = idRows.map((r) => Number(r.id));
+    const allRows: { id: number }[] = await idQb.getRawMany();
+    const total = allRows.length;
+    const ids = allRows.slice(skip, skip + limit).map((r) => Number(r.id));
 
     const data =
       ids.length > 0
