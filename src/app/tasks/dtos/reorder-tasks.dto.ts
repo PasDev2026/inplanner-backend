@@ -6,7 +6,10 @@ export class ReorderTaskDto {
   @IsNumber()
   taskId: number;
 
-  @ApiProperty({ required: false, description: 'Nuevo estado (opcional, si solo se reordena)' })
+  @ApiProperty({
+    required: false,
+    description: 'Nuevo estado (opcional, si solo se reordena)',
+  })
   @IsNumber()
   @IsOptional()
   targetStatus?: number;

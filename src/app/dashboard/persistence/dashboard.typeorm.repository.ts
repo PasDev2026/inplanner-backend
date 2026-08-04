@@ -8,9 +8,14 @@ import type {
   BySedeRow,
   IDashboardRepository,
   MonthlyCounts,
+  MyProjectItem,
+  MyTaskCounts,
   ProjectCounts,
+  ProjectProgressItem,
   TaskCounts,
   TasksByUserItem,
+  UpcomingDeadlineItem,
+  WeeklyActivityItem,
 } from '../repository/dashboard-repository.interface';
 
 const DB_SCHEMA = 'inplanner';
@@ -71,8 +76,10 @@ export class DashboardTypeormRepository implements IDashboardRepository {
     return this.taskRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.project', 'p')
-      .where('t.due_date >= NOW()')
+      .where('t.status != 4')
+      .andWhere('t.due_date IS NOT NULL')
       .orderBy('t.due_date', 'ASC')
+      .addOrderBy('t.id_task', 'ASC')
       .take(limit)
       .getMany();
   }
@@ -135,5 +142,89 @@ export class DashboardTypeormRepository implements IDashboardRepository {
       AND EXTRACT(YEAR FROM t.created_at) = $2
     GROUP BY p.sede_id`;
     return this.taskRepo.query(sql, [month, year]);
+  }
+
+  async getMyTaskCounts(userId: string): Promise<MyTaskCounts> {
+    const sql = `SELECT
+      COUNT(*)::int AS total,
+      COALESCE(SUM(CASE WHEN t.status = 0 THEN 1 ELSE 0 END), 0)::int AS pending,
+      COALESCE(SUM(CASE WHEN t.status = 2 THEN 1 ELSE 0 END), 0)::int AS "inProgress",
+      COALESCE(SUM(CASE WHEN t.status = 3 THEN 1 ELSE 0 END), 0)::int AS "underReview",
+      COALESCE(SUM(CASE WHEN t.status = 4 THEN 1 ELSE 0 END), 0)::int AS completed,
+      COALESCE(SUM(CASE WHEN t.due_date < NOW() AND t.status != 4 THEN 1 ELSE 0 END), 0)::int AS overdue
+    FROM ${DB_SCHEMA}.tasks t
+    JOIN ${DB_SCHEMA}.task_assignments ta ON ta.task_id = t.id_task
+    WHERE ta.user_id = $1`;
+    const [row]: [MyTaskCounts] = await this.taskRepo.query(sql, [userId]);
+    return row;
+  }
+
+  async getMyUpcomingDeadlines(
+    userId: string,
+    limit: number,
+  ): Promise<UpcomingDeadlineItem[]> {
+    const sql = `SELECT
+      t.id_task, t.task_name, t.due_date, t.status, t.priority,
+      p.id_project, p.name_project AS project_name
+    FROM ${DB_SCHEMA}.tasks t
+    JOIN ${DB_SCHEMA}.task_assignments ta ON ta.task_id = t.id_task
+    JOIN ${DB_SCHEMA}.projects p ON p.id_project = t.project_id
+    WHERE ta.user_id = $1 AND t.status != 4 AND t.due_date IS NOT NULL
+    ORDER BY t.due_date ASC, t.id_task ASC
+    LIMIT $2`;
+    return this.taskRepo.query<UpcomingDeadlineItem[]>(sql, [userId, limit]);
+  }
+
+  async getMyProjects(userId: string): Promise<MyProjectItem[]> {
+    const sql = `SELECT DISTINCT p.id_project, p.name_project, p.status, p.privacy_level, p.due_date
+    FROM ${DB_SCHEMA}.projects p
+    LEFT JOIN ${DB_SCHEMA}.project_responsibles pr ON pr.project_id = p.id_project
+    WHERE p.manager_id = $1 OR pr.user_id = $1
+    ORDER BY p.due_date ASC`;
+    return this.projectRepo.query<MyProjectItem[]>(sql, [userId]);
+  }
+
+  async getMyProjectProgress(userId: string): Promise<ProjectProgressItem[]> {
+    const sql = `SELECT
+      p.id_project, p.name_project,
+      COUNT(t.id_task)::int AS total,
+      COUNT(t.id_task) FILTER (WHERE t.status = 4)::int AS completed
+    FROM ${DB_SCHEMA}.projects p
+    LEFT JOIN ${DB_SCHEMA}.tasks t ON t.project_id = p.id_project
+    WHERE p.manager_id = $1
+      OR EXISTS (
+        SELECT 1 FROM ${DB_SCHEMA}.project_responsibles pr
+        WHERE pr.project_id = p.id_project AND pr.user_id = $1
+      )
+    GROUP BY p.id_project, p.name_project, p.due_date
+    ORDER BY p.due_date ASC`;
+    return this.projectRepo.query<ProjectProgressItem[]>(sql, [userId]);
+  }
+
+  async getMyWeeklyActivity(
+    userId: string,
+    from: Date,
+    to: Date,
+  ): Promise<WeeklyActivityItem[]> {
+    // ponytail: no hay columna completed_at; se usa updated_at como proxy de la fecha de cierre
+    const sql = `SELECT
+      to_char(date_trunc('week', ev.d), 'YYYY-MM-DD') AS week,
+      COUNT(*) FILTER (WHERE ev.kind = 'created')::int AS created,
+      COUNT(*) FILTER (WHERE ev.kind = 'completed')::int AS completed
+    FROM (
+      SELECT 'created' AS kind, t.created_at AS d
+      FROM ${DB_SCHEMA}.tasks t
+      JOIN ${DB_SCHEMA}.task_assignments ta ON ta.task_id = t.id_task
+      WHERE ta.user_id = $1
+      UNION ALL
+      SELECT 'completed' AS kind, t.updated_at AS d
+      FROM ${DB_SCHEMA}.tasks t
+      JOIN ${DB_SCHEMA}.task_assignments ta ON ta.task_id = t.id_task
+      WHERE ta.user_id = $1 AND t.status = 4
+    ) ev
+    WHERE ev.d >= $2::date AND ev.d <= $3::date
+    GROUP BY date_trunc('week', ev.d)
+    ORDER BY date_trunc('week', ev.d)`;
+    return this.taskRepo.query<WeeklyActivityItem[]>(sql, [userId, from, to]);
   }
 }

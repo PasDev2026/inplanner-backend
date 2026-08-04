@@ -45,7 +45,7 @@ export class SocketGateway
   ) {
     this.inactivityTimeout = this.configService.get<number>(
       'SOCKET_INACTIVITY_TIMEOUT',
-      900000,
+      28800000,
     );
   }
 

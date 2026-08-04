@@ -76,10 +76,19 @@ export class CentralizadoHttpClient {
       const data = (await response.json()) as TResponse;
 
       if (!response.ok) {
-        const errorData = data as { message?: string; statusCode?: number };
+        const errorData = data as Record<string, unknown>;
+        this.logger.warn(
+          `Centralizado ${method} ${url} respondió ${response.status}: ${JSON.stringify(errorData)}`,
+        );
+        const claims = this.decodeJwtClaims(options?.bearerToken);
+        if (claims) {
+          this.logger.warn(
+            `Claims del token (diagnóstico): persona_id=${claims.persona_id} sede_id=${claims.sede_id}`,
+          );
+        }
         throw new HttpException(
-          errorData.message ?? 'Error en servicio centralizado',
-          errorData.statusCode ?? response.status,
+          (errorData.message as string) ?? 'Error en servicio centralizado',
+          (errorData.statusCode as number) ?? response.status,
         );
       }
 
@@ -98,6 +107,26 @@ export class CentralizadoHttpClient {
       throw new HttpException('Servicio centralizado no disponible', 503);
     } finally {
       clearTimeout(timer);
+    }
+  }
+
+  private decodeJwtClaims(
+    token?: string,
+  ): { persona_id?: string; sede_id?: string } | null {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(
+        Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
+      ) as {
+        persona_id?: string;
+        roles?: { sede_id?: string }[];
+      };
+      return {
+        persona_id: payload.persona_id,
+        sede_id: payload.roles?.[0]?.sede_id,
+      };
+    } catch {
+      return null;
     }
   }
 }

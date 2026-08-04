@@ -17,7 +17,12 @@ export class TaskResponseDto {
   created_at: Date;
   updated_at: Date;
   subtasks_count?: number;
-  assignments?: { task_id: number; user_id: string; name?: string; apellido_paterno?: string | null }[];
+  assignments?: {
+    task_id: number;
+    user_id: string;
+    name?: string;
+    apellido_paterno?: string | null;
+  }[];
   notes?: {
     id_note: number;
     content: string;

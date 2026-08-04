@@ -1,5 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
-import type { IDashboardRepository, MonthlyCounts } from '../repository/dashboard-repository.interface';
+import type {
+  IDashboardRepository,
+  MonthlyCounts,
+} from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
 export interface MonthlyStatsResult {

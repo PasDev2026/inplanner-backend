@@ -6,7 +6,10 @@ export class ReorderProjectDto {
   @IsNumber()
   projectId: number;
 
-  @ApiProperty({ required: false, description: 'Nuevo estado (opcional, si solo se reordena)' })
+  @ApiProperty({
+    required: false,
+    description: 'Nuevo estado (opcional, si solo se reordena)',
+  })
   @IsNumber()
   @IsOptional()
   targetStatus?: number;

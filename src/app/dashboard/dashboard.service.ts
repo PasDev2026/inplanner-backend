@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { GetProjectCountsUseCase } from './use-cases/get-project-counts.use-case';
 import { GetTaskCountsUseCase } from './use-cases/get-task-counts.use-case';
 import { GetTasksByUserUseCase } from './use-cases/get-tasks-by-user.use-case';
@@ -7,6 +7,7 @@ import { GetRecentProjectsUseCase } from './use-cases/get-recent-projects.use-ca
 import { GetMonthlyStatsUseCase } from './use-cases/get-monthly-stats.use-case';
 import { DashboardStatsResponseDto } from './dtos/response/dashboard-stats-response.dto';
 import type { MonthlyStatsResult } from './use-cases/get-monthly-stats.use-case';
+import type { TaskEntity } from '../../app/tasks/entities/task.entity';
 import {
   DASHBOARD_REPOSITORY,
   type IDashboardRepository,
@@ -26,27 +27,24 @@ export class DashboardService {
   ) {}
 
   async getStats(): Promise<DashboardStatsResponseDto> {
-    const [
-      projectCounts,
-      taskCounts,
-      tasksByUser,
-      upcomingDeadlines,
-      recentProjects,
-    ] = await Promise.all([
-      this.getProjectCountsUseCase.execute(),
-      this.getTaskCountsUseCase.execute(),
-      this.getTasksByUserUseCase.execute(),
-      this.getUpcomingDeadlinesUseCase.execute(10),
-      this.getRecentProjectsUseCase.execute(5),
-    ]);
+    const [projectCounts, taskCounts, tasksByUser, recentProjects] =
+      await Promise.all([
+        this.getProjectCountsUseCase.execute(),
+        this.getTaskCountsUseCase.execute(),
+        this.getTasksByUserUseCase.execute(),
+        this.getRecentProjectsUseCase.execute(5),
+      ]);
 
     return DashboardStatsResponseDto.fromRaw({
       projectCounts,
       taskCounts,
       tasksByUser,
-      upcomingDeadlines,
       recentProjects,
     });
+  }
+
+  async getUpcomingDeadlines(limit: number): Promise<TaskEntity[]> {
+    return this.getUpcomingDeadlinesUseCase.execute(limit);
   }
 
   async getMonthlyStats(
@@ -54,6 +52,36 @@ export class DashboardService {
     year: number,
   ): Promise<MonthlyStatsResult> {
     return this.getMonthlyStatsUseCase.execute(month, year);
+  }
+
+  async getMyStats(userId: string) {
+    const [taskCounts, myProjects, projectProgress] = await Promise.all([
+      this.dashboardRepo.getMyTaskCounts(userId),
+      this.dashboardRepo.getMyProjects(userId),
+      this.dashboardRepo.getMyProjectProgress(userId),
+    ]);
+    return { taskCounts, myProjects, projectProgress };
+  }
+
+  async getMyUpcomingDeadlines(userId: string, limit: number) {
+    return this.dashboardRepo.getMyUpcomingDeadlines(userId, limit);
+  }
+
+  async getMyWeeklyActivity(userId: string, from?: string, to?: string) {
+    const toDate = this.parseDateParam(to) ?? new Date();
+    const fromDate =
+      this.parseDateParam(from) ??
+      new Date(toDate.getTime() - 7 * 7 * 24 * 60 * 60 * 1000);
+    if (fromDate > toDate) {
+      throw new BadRequestException('El rango de fechas es inválido');
+    }
+    return this.dashboardRepo.getMyWeeklyActivity(userId, fromDate, toDate);
+  }
+
+  private parseDateParam(value?: string): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date;
   }
 
   async getBySedeStats(month: number, year: number) {
