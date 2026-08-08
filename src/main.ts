@@ -54,7 +54,7 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(
     new BigIntInterceptor(),
-    new TransformInterceptor(),
+    new TransformInterceptor(app.get(Reflector)),
     new ClassSerializerInterceptor(app.get(Reflector)),
   );
   logger.log(

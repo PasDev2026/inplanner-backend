@@ -1,12 +1,19 @@
 import { ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { TransformInterceptor } from './transform.interceptor';
 import { of } from 'rxjs';
 
 describe('TransformInterceptor', () => {
   let interceptor: TransformInterceptor<unknown>;
 
+  function mockReflector(skip: boolean): Reflector {
+    return {
+      getAllAndOverride: jest.fn().mockReturnValue(skip),
+    } as unknown as Reflector;
+  }
+
   beforeEach(() => {
-    interceptor = new TransformInterceptor();
+    interceptor = new TransformInterceptor(mockReflector(false));
   });
 
   function mockContext(): ExecutionContext {
@@ -58,6 +65,17 @@ describe('TransformInterceptor', () => {
         data: null,
         timestamp: expect.any(String) as string,
       });
+      done();
+    });
+  });
+
+  it('should pass through untouched when @SkipTransform is set', (done) => {
+    interceptor = new TransformInterceptor(mockReflector(true));
+    const raw = Buffer.from('xlsx-bytes');
+    const callHandler = { handle: () => of(raw) };
+
+    interceptor.intercept(mockContext(), callHandler).subscribe((result) => {
+      expect(result).toBe(raw);
       done();
     });
   });

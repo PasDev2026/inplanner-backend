@@ -1,4 +1,4 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, StreamableFile } from '@nestjs/common';
 import { BigIntInterceptor } from './bigint.interceptor';
 import { of } from 'rxjs';
 
@@ -78,6 +78,19 @@ describe('BigIntInterceptor', () => {
 
     interceptor.intercept(mockContext(), callHandler).subscribe((result) => {
       expect(result).toEqual([{ id: '1' }, { id: '2' }]);
+      done();
+    });
+  });
+
+  it('should pass StreamableFile and Buffer unchanged', (done) => {
+    const streamable = new StreamableFile(Buffer.from('x'));
+    const buffer = Buffer.from([1, 2, 3]);
+    const callHandler = { handle: () => of({ streamable, buffer }) };
+
+    interceptor.intercept(mockContext(), callHandler).subscribe((result) => {
+      expect(result).toEqual({ streamable, buffer });
+      expect(result.streamable).toBe(streamable);
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
       done();
     });
   });

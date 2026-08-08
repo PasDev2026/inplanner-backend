@@ -76,7 +76,11 @@ export class CentralizadoHttpClient {
       const data = (await response.json()) as TResponse;
 
       if (!response.ok) {
-        const errorData = data as Record<string, unknown>;
+        const errorData = data as {
+          message?: string | string[];
+          error?: string;
+          statusCode?: number;
+        };
         this.logger.warn(
           `Centralizado ${method} ${url} respondió ${response.status}: ${JSON.stringify(errorData)}`,
         );
@@ -86,9 +90,16 @@ export class CentralizadoHttpClient {
             `Claims del token (diagnóstico): persona_id=${claims.persona_id} sede_id=${claims.sede_id}`,
           );
         }
+        const statusCode = errorData.statusCode ?? response.status;
+        const message =
+          (typeof errorData.message === 'string' &&
+            errorData.message.length > 0) ||
+          (Array.isArray(errorData.message) && errorData.message.length > 0)
+            ? errorData.message
+            : (errorData.error ?? 'Error en servicio centralizado');
         throw new HttpException(
-          (errorData.message as string) ?? 'Error en servicio centralizado',
-          (errorData.statusCode as number) ?? response.status,
+          { message, error: errorData.error, statusCode },
+          statusCode,
         );
       }
 

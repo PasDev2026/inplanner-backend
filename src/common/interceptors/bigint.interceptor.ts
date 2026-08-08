@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -17,6 +18,7 @@ export class BigIntInterceptor implements NestInterceptor {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj === 'bigint') return obj.toString();
     if (obj instanceof Date) return obj.toISOString();
+    if (obj instanceof StreamableFile || Buffer.isBuffer(obj)) return obj;
     if (Array.isArray(obj)) return obj.map((item) => this.serialize(item));
     if (typeof obj === 'object') {
       const source = obj as Record<string, unknown>;
