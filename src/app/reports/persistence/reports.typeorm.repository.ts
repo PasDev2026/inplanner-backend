@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { TaskEntity } from '../../tasks/entities/task.entity';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
 import { DB_SCHEMA } from '../constants/report.constants';
+import {
+  isSuperAdmin,
+  userSedeIds,
+} from '../../../common/helpers/user-auth.helper';
 import type { IReportsRepository } from '../repository/reports-repository.interface';
 import type {
   ActivityReportRow,
@@ -165,7 +169,7 @@ export class ReportsTypeormRepository implements IReportsRepository {
     searchColumns: string[],
   ): FiltersBuilder {
     const b = new FiltersBuilder();
-    if (!user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')) {
+    if (!isSuperAdmin(user)) {
       const userId = b.param(user.sub);
       const privacy = [
         `p.manager_id = ${userId}`,
@@ -179,9 +183,7 @@ export class ReportsTypeormRepository implements IReportsRepository {
           SELECT u.area_id FROM ${DB_SCHEMA}.users u WHERE u.id_user = ${userId}
         ))`,
       ];
-      const userSedes = user.roles
-        .filter((r) => r.sede_id)
-        .map((r) => r.sede_id);
+      const userSedes = userSedeIds(user);
       if (userSedes.length > 0) {
         const sedes = b.param(userSedes);
         privacy.push(

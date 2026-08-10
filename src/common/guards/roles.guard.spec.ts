@@ -1,6 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
 import { RolesGuard } from './roles.guard';
 import { Role } from '../enums/role.enum';
+import type { UserSede } from '../../app/auth/interfaces/auth-types';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -8,11 +9,13 @@ describe('RolesGuard', () => {
 
   beforeEach(() => {
     reflector = { getAllAndOverride: jest.fn() };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    guard = new RolesGuard(reflector as any);
+    guard = new RolesGuard(reflector as never);
   });
 
-  function createContext(user?: { roles: string[] }): ExecutionContext {
+  function createContext(user?: {
+    sede_activa: UserSede;
+    otras_sedes: UserSede[];
+  }): ExecutionContext {
     return {
       switchToHttp: () => ({
         getRequest: () => ({ user }),
@@ -22,36 +25,61 @@ describe('RolesGuard', () => {
     } as ExecutionContext;
   }
 
+  function sede(rol_codigo: string): UserSede {
+    return {
+      sede_id: 'sede-1',
+      sede_nombre: 'Sede',
+      sede_slug: 'sede',
+      rol_codigo,
+    };
+  }
+
   it('should return true when no roles are required', () => {
     reflector.getAllAndOverride.mockReturnValue(undefined);
     const result = guard.canActivate(
-      createContext({ roles: [Role.SUPER_ADMIN] }),
+      createContext({
+        sede_activa: sede(Role.SUPER_ADMINISTRADOR),
+        otras_sedes: [],
+      }),
     );
     expect(result).toBe(true);
   });
 
-  it('should return true when user has the required role', () => {
-    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMIN]);
+  it('should return true when the active sede role matches', () => {
+    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMINISTRADOR]);
     const result = guard.canActivate(
-      createContext({ roles: [Role.SUPER_ADMIN] }),
+      createContext({
+        sede_activa: sede(Role.SUPER_ADMINISTRADOR),
+        otras_sedes: [],
+      }),
     );
     expect(result).toBe(true);
   });
 
-  it('should return false when user does not have the required role', () => {
-    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMIN]);
-    const result = guard.canActivate(createContext({ roles: [Role.PERSONAL] }));
-    expect(result).toBe(false);
+  it('should return true when a role in otras_sedes matches', () => {
+    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMINISTRADOR]);
+    const result = guard.canActivate(
+      createContext({
+        sede_activa: sede(Role.PERSONAL),
+        otras_sedes: [sede(Role.SUPER_ADMINISTRADOR)],
+      }),
+    );
+    expect(result).toBe(true);
   });
 
-  it('should return false when user has no roles', () => {
-    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMIN]);
-    const result = guard.canActivate(createContext({ roles: [] }));
+  it('should return false when the user does not have the required role', () => {
+    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMINISTRADOR]);
+    const result = guard.canActivate(
+      createContext({
+        sede_activa: sede(Role.PERSONAL),
+        otras_sedes: [],
+      }),
+    );
     expect(result).toBe(false);
   });
 
   it('should return false when request has no user', () => {
-    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMIN]);
+    reflector.getAllAndOverride.mockReturnValue([Role.SUPER_ADMINISTRADOR]);
     const result = guard.canActivate(createContext(undefined));
     expect(result).toBe(false);
   });

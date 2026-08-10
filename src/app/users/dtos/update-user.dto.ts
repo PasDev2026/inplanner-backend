@@ -1,4 +1,5 @@
 import { IsBoolean, IsInt, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
@@ -8,6 +9,7 @@ export class UpdateUserDto {
     required: false,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   area_id?: number;
 

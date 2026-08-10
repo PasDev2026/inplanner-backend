@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { VALIDATION } from '../../../common/constants/validation.constants';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -21,4 +21,14 @@ export class LoginDto {
     message: 'La contraseña debe tener al menos 6 caracteres',
   })
   password: string;
+
+  @ApiProperty({
+    example: 'golf',
+    description:
+      'Slug de la sede activa (requerido si el usuario tiene varias sedes en el país)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  sede_slug?: string;
 }

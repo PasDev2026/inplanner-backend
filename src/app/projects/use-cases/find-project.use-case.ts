@@ -6,6 +6,10 @@ import { PROJECT_RESPONSIBLE_REPOSITORY } from '../repository/project-responsibl
 import { ProjectEntity } from '../entities/project.entity';
 import { PrivacyLevel } from '../../../common/enums/privacy-level.enum';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
+import {
+  isSuperAdmin,
+  userSedeIds,
+} from '../../../common/helpers/user-auth.helper';
 
 @Injectable()
 export class FindProjectUseCase {
@@ -21,10 +25,7 @@ export class FindProjectUseCase {
     if (!project) {
       throw new NotFoundException('Proyecto con ID ' + id + ' no encontrado');
     }
-    if (
-      user &&
-      !user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')
-    ) {
+    if (user && !isSuperAdmin(user)) {
       const canSee = await this.canSeeProject(project, user);
       if (!canSee) {
         throw new NotFoundException('Proyecto con ID ' + id + ' no encontrado');
@@ -55,7 +56,7 @@ export class FindProjectUseCase {
     }
     if (project.privacy_level === PrivacyLevel.SOLO_SEDE) {
       if (!project.sede_id) return false;
-      return user.roles.some((r) => r.sede_id === project.sede_id);
+      return userSedeIds(user).includes(project.sede_id);
     }
     return false;
   }

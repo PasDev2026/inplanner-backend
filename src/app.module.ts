@@ -45,6 +45,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
           max: 20,
           idleTimeoutMillis: 30000,
           query_timeout: 10000,
+          connectionTimeoutMillis: 10000,
         },
       }),
     }),

@@ -8,6 +8,10 @@ import { PaginatedResult } from '../../../common/interfaces/pagination.interface
 import { DB_SCHEMA } from '../../../config/schema';
 import { PrivacyLevel } from '../../../common/enums/privacy-level.enum';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
+import {
+  isSuperAdmin,
+  userSedeIds,
+} from '../../../common/helpers/user-auth.helper';
 
 @Injectable()
 export class ProjectTypeormRepository implements IProjectRepository {
@@ -87,10 +91,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       });
     }
 
-    if (
-      user &&
-      !user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')
-    ) {
+    if (user && !isSuperAdmin(user)) {
       this.applyPrivacyFilter(idQb, user);
     }
 
@@ -232,10 +233,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       .orderBy('project.status', 'ASC')
       .addOrderBy('project.position', 'ASC');
 
-    if (
-      user &&
-      !user.roles.some((r) => r.rol_codigo === 'SUPER_ADMINISTRADOR')
-    ) {
+    if (user && !isSuperAdmin(user)) {
       this.applyPrivacyFilter(qb, user);
     }
 
@@ -278,7 +276,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       `AND project.sede_id = ANY(:userSedes) ` +
       `))`;
 
-    const userSedes = user.roles.filter((r) => r.sede_id).map((r) => r.sede_id);
+    const userSedes = userSedeIds(user);
 
     qb.andWhere(where, {
       pub: PrivacyLevel.PUBLICO,

@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import type {
   IDashboardRepository,
   TaskCounts,
+  DashboardScope,
 } from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
@@ -12,7 +13,7 @@ export class GetTaskCountsUseCase {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async execute(): Promise<TaskCounts> {
-    return this.dashboardRepo.getTaskCounts();
+  async execute(scope: DashboardScope): Promise<TaskCounts> {
+    return this.dashboardRepo.getTaskCounts(scope);
   }
 }

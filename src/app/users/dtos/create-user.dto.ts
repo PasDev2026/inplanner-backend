@@ -8,6 +8,7 @@ import {
 import { MaxLength } from 'class-validator';
 import { VALIDATION } from '../../../common/constants/validation.constants';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -72,6 +73,7 @@ export class CreateUserDto {
   telefono?: string;
 
   @ApiProperty({ example: 1, description: 'ID del área a la que pertenece' })
+  @Type(() => Number)
   @IsInt()
   @IsNotEmpty()
   area_id: number;

@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { TaskEntity } from '../../tasks/entities/task.entity';
-import type { IDashboardRepository } from '../repository/dashboard-repository.interface';
+import type {
+  IDashboardRepository,
+  DashboardScope,
+} from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
 @Injectable()
@@ -10,7 +13,7 @@ export class GetUpcomingDeadlinesUseCase {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async execute(limit: number): Promise<TaskEntity[]> {
-    return this.dashboardRepo.getUpcomingDeadlines(limit);
+  async execute(limit: number, scope: DashboardScope): Promise<TaskEntity[]> {
+    return this.dashboardRepo.getUpcomingDeadlines(limit, scope);
   }
 }

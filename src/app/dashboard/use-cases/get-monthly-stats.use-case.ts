@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import type {
   IDashboardRepository,
   MonthlyCounts,
+  DashboardScope,
 } from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
@@ -19,10 +20,14 @@ export class GetMonthlyStatsUseCase {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async execute(month: number, year: number): Promise<MonthlyStatsResult> {
+  async execute(
+    month: number,
+    year: number,
+    scope: DashboardScope,
+  ): Promise<MonthlyStatsResult> {
     const [tasks, projects] = await Promise.all([
-      this.dashboardRepo.getMonthlyTaskCounts(month, year),
-      this.dashboardRepo.getMonthlyProjectCounts(month, year),
+      this.dashboardRepo.getMonthlyTaskCounts(month, year, scope),
+      this.dashboardRepo.getMonthlyProjectCounts(month, year, scope),
     ]);
     return { month, year, tasks, projects };
   }

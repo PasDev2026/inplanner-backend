@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -35,8 +36,22 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         algorithms: ['RS256'],
       });
+
+      if (payload.tipo !== 'TRABAJADOR') {
+        throw new ForbiddenException(
+          'Acceso denegado, solo personal autorizado',
+        );
+      }
+
+      if (!payload.sede_activa?.rol_codigo) {
+        throw new ForbiddenException(
+          'No tienes un rol asignado en la sede activa',
+        );
+      }
+
       request['user'] = payload;
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof ForbiddenException) throw error;
       throw new UnauthorizedException('Token inválido o expirado');
     }
 

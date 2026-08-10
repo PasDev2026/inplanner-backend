@@ -20,8 +20,8 @@ export class AuthService {
     private readonly userRepo: Repository<UserEntity>,
   ) {}
 
-  async login(dto: LoginDto): Promise<LoginResponse> {
-    const response = await this.authCentralizado.login(dto);
+  async login(dto: LoginDto, paisCodigo: string): Promise<LoginResponse> {
+    const response = await this.authCentralizado.login(dto, paisCodigo);
     const jwt = this.decodeJwt(response.access_token);
     if (jwt) {
       response.usuario.nombres = jwt.nombres;
@@ -70,7 +70,7 @@ export class AuthService {
   }
 
   private async syncLocalUser(jwt: JwtPayload, email?: string): Promise<void> {
-    const sede_id = jwt.roles?.[0]?.sede_id || null;
+    const sede_id = jwt.sede_activa?.sede_id || null;
     const existing = await this.userRepo.findOneBy({
       persona_uuid: jwt.persona_id,
     });

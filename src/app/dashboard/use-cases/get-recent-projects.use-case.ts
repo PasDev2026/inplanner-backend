@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ProjectEntity } from '../../projects/entities/project.entity';
-import type { IDashboardRepository } from '../repository/dashboard-repository.interface';
+import type {
+  IDashboardRepository,
+  DashboardScope,
+} from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
 @Injectable()
@@ -10,7 +13,10 @@ export class GetRecentProjectsUseCase {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async execute(limit: number): Promise<ProjectEntity[]> {
-    return this.dashboardRepo.getRecentProjects(limit);
+  async execute(
+    limit: number,
+    scope: DashboardScope,
+  ): Promise<ProjectEntity[]> {
+    return this.dashboardRepo.getRecentProjects(limit, scope);
   }
 }

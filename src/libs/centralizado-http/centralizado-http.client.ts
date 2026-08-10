@@ -4,6 +4,7 @@ import { envs } from '../../config/envs';
 export interface CentralizadoRequestOptions {
   bearerToken?: string;
   timeout?: number;
+  extraHeaders?: Record<string, string>;
 }
 
 @Injectable()
@@ -55,6 +56,10 @@ export class CentralizadoHttpClient {
 
     if (options?.bearerToken) {
       headers['Authorization'] = `Bearer ${options.bearerToken}`;
+    }
+
+    if (options?.extraHeaders) {
+      Object.assign(headers, options.extraHeaders);
     }
 
     const timeout = options?.timeout ?? this.defaultTimeout;
@@ -130,11 +135,11 @@ export class CentralizadoHttpClient {
         Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
       ) as {
         persona_id?: string;
-        roles?: { sede_id?: string }[];
+        sede_activa?: { sede_id?: string };
       };
       return {
         persona_id: payload.persona_id,
-        sede_id: payload.roles?.[0]?.sede_id,
+        sede_id: payload.sede_activa?.sede_id,
       };
     } catch {
       return null;

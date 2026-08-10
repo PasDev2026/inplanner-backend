@@ -1,8 +1,14 @@
 import { InjectionToken } from '@nestjs/common';
 import { TaskEntity } from '../../tasks/entities/task.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
+import type { JwtPayload } from '../../auth/interfaces/auth-types';
 
 export const DASHBOARD_REPOSITORY = 'DASHBOARD_REPOSITORY' as InjectionToken;
+
+export type DashboardScope =
+  | { type: 'all' }
+  | { type: 'area'; areaId: number }
+  | { type: 'sede'; sedeIds: string[] };
 
 export interface ProjectCounts {
   total: number;
@@ -81,15 +87,38 @@ export interface WeeklyActivityItem {
 }
 
 export interface IDashboardRepository {
-  getProjectCounts(): Promise<ProjectCounts>;
-  getTaskCounts(): Promise<TaskCounts>;
-  getTasksByUser(): Promise<TasksByUserItem[]>;
-  getUpcomingDeadlines(limit: number): Promise<TaskEntity[]>;
-  getRecentProjects(limit: number): Promise<ProjectEntity[]>;
-  getMonthlyTaskCounts(month: number, year: number): Promise<MonthlyCounts>;
-  getMonthlyProjectCounts(month: number, year: number): Promise<MonthlyCounts>;
-  getProjectsBySede(month: number, year: number): Promise<BySedeRow[]>;
-  getTasksBySede(month: number, year: number): Promise<BySedeRow[]>;
+  resolveScope(user: JwtPayload): Promise<DashboardScope>;
+  getProjectCounts(scope: DashboardScope): Promise<ProjectCounts>;
+  getTaskCounts(scope: DashboardScope): Promise<TaskCounts>;
+  getTasksByUser(scope: DashboardScope): Promise<TasksByUserItem[]>;
+  getUpcomingDeadlines(
+    limit: number,
+    scope: DashboardScope,
+  ): Promise<TaskEntity[]>;
+  getRecentProjects(
+    limit: number,
+    scope: DashboardScope,
+  ): Promise<ProjectEntity[]>;
+  getMonthlyTaskCounts(
+    month: number,
+    year: number,
+    scope: DashboardScope,
+  ): Promise<MonthlyCounts>;
+  getMonthlyProjectCounts(
+    month: number,
+    year: number,
+    scope: DashboardScope,
+  ): Promise<MonthlyCounts>;
+  getProjectsBySede(
+    month: number,
+    year: number,
+    scope: DashboardScope,
+  ): Promise<BySedeRow[]>;
+  getTasksBySede(
+    month: number,
+    year: number,
+    scope: DashboardScope,
+  ): Promise<BySedeRow[]>;
   getMyTaskCounts(userId: string): Promise<MyTaskCounts>;
   getMyUpcomingDeadlines(
     userId: string,

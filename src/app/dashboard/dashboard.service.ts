@@ -8,6 +8,7 @@ import { GetMonthlyStatsUseCase } from './use-cases/get-monthly-stats.use-case';
 import { DashboardStatsResponseDto } from './dtos/response/dashboard-stats-response.dto';
 import type { MonthlyStatsResult } from './use-cases/get-monthly-stats.use-case';
 import type { TaskEntity } from '../../app/tasks/entities/task.entity';
+import type { JwtPayload } from '../auth/interfaces/auth-types';
 import {
   DASHBOARD_REPOSITORY,
   type IDashboardRepository,
@@ -26,13 +27,14 @@ export class DashboardService {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async getStats(): Promise<DashboardStatsResponseDto> {
+  async getStats(user: JwtPayload): Promise<DashboardStatsResponseDto> {
+    const scope = await this.dashboardRepo.resolveScope(user);
     const [projectCounts, taskCounts, tasksByUser, recentProjects] =
       await Promise.all([
-        this.getProjectCountsUseCase.execute(),
-        this.getTaskCountsUseCase.execute(),
-        this.getTasksByUserUseCase.execute(),
-        this.getRecentProjectsUseCase.execute(5),
+        this.getProjectCountsUseCase.execute(scope),
+        this.getTaskCountsUseCase.execute(scope),
+        this.getTasksByUserUseCase.execute(scope),
+        this.getRecentProjectsUseCase.execute(5, scope),
       ]);
 
     return DashboardStatsResponseDto.fromRaw({
@@ -43,15 +45,21 @@ export class DashboardService {
     });
   }
 
-  async getUpcomingDeadlines(limit: number): Promise<TaskEntity[]> {
-    return this.getUpcomingDeadlinesUseCase.execute(limit);
+  async getUpcomingDeadlines(
+    limit: number,
+    user: JwtPayload,
+  ): Promise<TaskEntity[]> {
+    const scope = await this.dashboardRepo.resolveScope(user);
+    return this.getUpcomingDeadlinesUseCase.execute(limit, scope);
   }
 
   async getMonthlyStats(
     month: number,
     year: number,
+    user: JwtPayload,
   ): Promise<MonthlyStatsResult> {
-    return this.getMonthlyStatsUseCase.execute(month, year);
+    const scope = await this.dashboardRepo.resolveScope(user);
+    return this.getMonthlyStatsUseCase.execute(month, year, scope);
   }
 
   async getMyStats(userId: string) {
@@ -84,10 +92,11 @@ export class DashboardService {
     return isNaN(date.getTime()) ? null : date;
   }
 
-  async getBySedeStats(month: number, year: number) {
+  async getBySedeStats(month: number, year: number, user: JwtPayload) {
+    const scope = await this.dashboardRepo.resolveScope(user);
     const [projects, tasks] = await Promise.all([
-      this.dashboardRepo.getProjectsBySede(month, year),
-      this.dashboardRepo.getTasksBySede(month, year),
+      this.dashboardRepo.getProjectsBySede(month, year, scope),
+      this.dashboardRepo.getTasksBySede(month, year, scope),
     ]);
     const map = new Map<
       string,

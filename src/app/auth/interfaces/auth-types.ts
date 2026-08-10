@@ -1,23 +1,36 @@
+export interface UserSede {
+  sede_id: string;
+  sede_nombre: string;
+  sede_slug: string;
+  rol_codigo: string;
+}
+
 export interface JwtPayload {
   sub: string;
   persona_id: string;
   numero_documento: string;
   nombres: string;
   apellido_paterno: string;
-  roles: { sede_id: string; sede_nombre: string; rol_codigo: string }[];
-  tipo: string;
+  sexo: string | null;
+  fecha_nacimiento: string | null;
+  tipo: 'TRABAJADOR' | 'PACIENTE';
+  pais_codigo: string;
+  sede_activa: UserSede;
+  otras_sedes: UserSede[];
   iat?: number;
   exp?: number;
 }
 
 export interface UsuarioResponse {
   id: string;
-  numero_documento: string;
+  numero_documento?: string;
   nombre_completo: string;
   nombres: string;
   apellido_paterno: string;
   email: string | null;
-  roles: { sedeId: string; sedeNombre: string; rolCodigo: string }[];
+  pais_codigo: string;
+  sede_activa: UserSede;
+  otras_sedes: UserSede[];
 }
 
 export interface TokenData {

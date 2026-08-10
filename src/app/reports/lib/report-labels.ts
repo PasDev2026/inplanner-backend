@@ -18,7 +18,8 @@ export function toActivityExcelRow(
 ): ActivityExcelRow {
   return {
     task_name: hierarchy
-      ? '   '.repeat(hierarchy.level - 1) + `${hierarchy.path}. ${row.task_name}`
+      ? '   '.repeat(hierarchy.level - 1) +
+        `${hierarchy.path}. ${row.task_name}`
       : row.task_name,
     responsible: (row.assignments ?? [])
       .map((a) => [a.name, a.apellido_paterno].filter(Boolean).join(' '))

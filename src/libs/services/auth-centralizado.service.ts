@@ -12,10 +12,11 @@ import type {
 export class AuthCentralizadoService {
   constructor(private readonly http: CentralizadoHttpClient) {}
 
-  async login(payload: LoginDto): Promise<LoginResponse> {
+  async login(payload: LoginDto, paisCodigo = 'PE'): Promise<LoginResponse> {
     const env = await this.http.post<LoginDto, CentralizadoEnvelope<TokenData>>(
       '/auth/login',
       payload,
+      { extraHeaders: { 'X-Country-Code': paisCodigo } },
     );
     return env.data;
   }

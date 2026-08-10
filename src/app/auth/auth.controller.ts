@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Patch,
@@ -48,8 +49,11 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Headers('x-country-code') paisCodigo?: string,
+  ) {
+    return this.authService.login(loginDto, paisCodigo ?? 'PE');
   }
 
   @Public()

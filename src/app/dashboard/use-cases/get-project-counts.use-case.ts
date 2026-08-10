@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import type {
   IDashboardRepository,
   ProjectCounts,
+  DashboardScope,
 } from '../repository/dashboard-repository.interface';
 import { DASHBOARD_REPOSITORY } from '../repository/dashboard-repository.interface';
 
@@ -12,7 +13,7 @@ export class GetProjectCountsUseCase {
     private readonly dashboardRepo: IDashboardRepository,
   ) {}
 
-  async execute(): Promise<ProjectCounts> {
-    return this.dashboardRepo.getProjectCounts();
+  async execute(scope: DashboardScope): Promise<ProjectCounts> {
+    return this.dashboardRepo.getProjectCounts(scope);
   }
 }

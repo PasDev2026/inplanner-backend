@@ -25,9 +25,17 @@ const base = (over: Partial<ActivityReportRow>): ActivityReportRow => ({
 describe('buildHierarchyMap', () => {
   it('numbers parent/child/grandchild', () => {
     const rows = [
-      base({ id_task: 3, parent_task_id: 2, created_at: new Date('2026-01-03T10:00:00Z') }),
+      base({
+        id_task: 3,
+        parent_task_id: 2,
+        created_at: new Date('2026-01-03T10:00:00Z'),
+      }),
       base({ id_task: 1, created_at: new Date('2026-01-01T10:00:00Z') }),
-      base({ id_task: 2, parent_task_id: 1, created_at: new Date('2026-01-02T10:00:00Z') }),
+      base({
+        id_task: 2,
+        parent_task_id: 1,
+        created_at: new Date('2026-01-02T10:00:00Z'),
+      }),
     ];
     const map = buildHierarchyMap(rows);
     expect(map.get(1)).toEqual({ path: '1', level: 1 });
@@ -47,7 +55,11 @@ describe('buildHierarchyMap', () => {
 
   it('treats a task whose parent is filtered out as a root', () => {
     const rows = [
-      base({ id_task: 2, parent_task_id: 99, created_at: new Date('2026-01-02T10:00:00Z') }),
+      base({
+        id_task: 2,
+        parent_task_id: 99,
+        created_at: new Date('2026-01-02T10:00:00Z'),
+      }),
       base({ id_task: 1, created_at: new Date('2026-01-01T10:00:00Z') }),
     ];
     const map = buildHierarchyMap(rows);
@@ -56,10 +68,22 @@ describe('buildHierarchyMap', () => {
 
   it('sorts rows into tree order (parent before children, siblings numeric)', () => {
     const rows = [
-      base({ id_task: 3, parent_task_id: 2, created_at: new Date('2026-01-04T10:00:00Z') }),
+      base({
+        id_task: 3,
+        parent_task_id: 2,
+        created_at: new Date('2026-01-04T10:00:00Z'),
+      }),
       base({ id_task: 1, created_at: new Date('2026-01-01T10:00:00Z') }),
-      base({ id_task: 4, parent_task_id: 1, created_at: new Date('2026-01-03T10:00:00Z') }),
-      base({ id_task: 2, parent_task_id: 1, created_at: new Date('2026-01-02T10:00:00Z') }),
+      base({
+        id_task: 4,
+        parent_task_id: 1,
+        created_at: new Date('2026-01-03T10:00:00Z'),
+      }),
+      base({
+        id_task: 2,
+        parent_task_id: 1,
+        created_at: new Date('2026-01-02T10:00:00Z'),
+      }),
     ];
     const hier = buildHierarchyMap(rows);
     const sorted = sortByHierarchy(rows, hier);
@@ -73,8 +97,18 @@ describe('buildHierarchyMap', () => {
 
   it('orders 1.2 before 1.10 and groups projects alphabetically', () => {
     const rows = [
-      base({ id_task: 2, parent_task_id: 1, project_name: 'Beta', created_at: new Date('2026-01-10T10:00:00Z') }),
-      base({ id_task: 3, parent_task_id: 1, project_name: 'Beta', created_at: new Date('2026-01-02T10:00:00Z') }),
+      base({
+        id_task: 2,
+        parent_task_id: 1,
+        project_name: 'Beta',
+        created_at: new Date('2026-01-10T10:00:00Z'),
+      }),
+      base({
+        id_task: 3,
+        parent_task_id: 1,
+        project_name: 'Beta',
+        created_at: new Date('2026-01-02T10:00:00Z'),
+      }),
       base({ id_task: 1, project_name: 'Beta' }),
       base({ id_task: 4, id_project: 2, project_name: 'Alpha' }),
     ];
