@@ -14,6 +14,15 @@ export class ReorderTaskDto {
   @IsOptional()
   targetStatus?: number;
 
+  @ApiProperty({
+    required: false,
+    description:
+      'Nueva tarea padre (opcional). Omitir o null = moverse a la raíz del proyecto',
+  })
+  @IsNumber()
+  @IsOptional()
+  parentTaskId?: number;
+
   @ApiProperty({ description: 'Índice 0-based dentro de la columna destino' })
   @IsNumber()
   position: number;

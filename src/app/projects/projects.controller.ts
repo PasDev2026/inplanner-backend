@@ -61,8 +61,8 @@ export class ProjectsController {
     description: 'Obtiene todos los proyectos sin paginacion para ver el kaban',
   })
   @ApiResponse({ status: 200, description: 'Lista de proyectos para Kanban' })
-  findKanban(@CurrentUser() user: JwtPayload) {
-    return this.projectsService.findKanban(user);
+  findKanban(@Query() query: QueryProjectDto, @CurrentUser() user: JwtPayload) {
+    return this.projectsService.findKanban(query, user);
   }
 
   @Get(':id')

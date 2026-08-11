@@ -20,7 +20,7 @@ export class FindProjectsUseCase {
     return this.projectRepo.findWithPagination(query, user);
   }
 
-  async findAll(user?: JwtPayload): Promise<ProjectEntity[]> {
-    return this.projectRepo.findAll(user);
+  async findAll(user?: JwtPayload, mine = false): Promise<ProjectEntity[]> {
+    return this.projectRepo.findAll(user, mine);
   }
 }

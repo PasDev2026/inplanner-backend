@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { TASK_REPOSITORY } from '../src/app/tasks/repository/task-repository.interface';
 import type { ITaskRepository } from '../src/app/tasks/repository/task-repository.interface';
 import { TASK_ASSIGNMENT_REPOSITORY } from '../src/app/tasks/repository/task-assignment-repository.interface';
@@ -14,6 +18,7 @@ import { CreateAssignmentUseCase } from '../src/app/tasks/use-cases/create-assig
 import { FindAssignmentsUseCase } from '../src/app/tasks/use-cases/find-assignments.use-case';
 import { RemoveAssignmentUseCase } from '../src/app/tasks/use-cases/remove-assignment.use-case';
 import { FindChildrenUseCase } from '../src/app/tasks/use-cases/find-children.use-case';
+import { ReorderTasksUseCase } from '../src/app/tasks/use-cases/reorder-tasks.use-case';
 import { TaskEntity } from '../src/app/tasks/entities/task.entity';
 import { TaskAssignmentEntity } from '../src/app/tasks/entities/task-assignment.entity';
 import { createMock, Mockify } from './helpers/mock-factory';
@@ -29,6 +34,7 @@ describe('TasksModule', () => {
   let findAssignmentsUseCase: FindAssignmentsUseCase;
   let removeAssignmentUseCase: RemoveAssignmentUseCase;
   let findChildrenUseCase: FindChildrenUseCase;
+  let reorderTasksUseCase: ReorderTasksUseCase;
   let taskRepo: Mockify<ITaskRepository>;
   let assignmentRepo: Mockify<ITaskAssignmentRepository>;
 
@@ -40,6 +46,9 @@ describe('TasksModule', () => {
       'update',
       'delete',
       'findChildren',
+      'findSiblings',
+      'updatePosition',
+      'getMaxPosition',
     ]);
     assignmentRepo = createMock<ITaskAssignmentRepository>([
       'findOneByTaskAndUser',
@@ -62,6 +71,7 @@ describe('TasksModule', () => {
         FindAssignmentsUseCase,
         RemoveAssignmentUseCase,
         FindChildrenUseCase,
+        ReorderTasksUseCase,
       ],
     }).compile();
 
@@ -75,6 +85,7 @@ describe('TasksModule', () => {
     findAssignmentsUseCase = module.get(FindAssignmentsUseCase);
     removeAssignmentUseCase = module.get(RemoveAssignmentUseCase);
     findChildrenUseCase = module.get(FindChildrenUseCase);
+    reorderTasksUseCase = module.get(ReorderTasksUseCase);
   });
 
   beforeEach(() => {
@@ -256,6 +267,148 @@ describe('TasksModule', () => {
 
       expect(taskRepo.findChildren).toHaveBeenCalledWith(1);
       expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('reorderTask', () => {
+    function task(partial: Partial<TaskEntity>): TaskEntity {
+      return Object.assign(new TaskEntity(), {
+        task_name: 'T',
+        project_id: 1,
+        created_by_id: 'uuid',
+        status: 0,
+        position: 1000,
+        ...partial,
+      });
+    }
+
+    it('should reorder within the same group using the task status', async () => {
+      const moving = task({ id_task: 2, position: 2000 });
+      taskRepo.findOneById.mockResolvedValue(moving);
+      taskRepo.findSiblings.mockResolvedValue([
+        task({ id_task: 1, position: 1000 }),
+        moving,
+        task({ id_task: 3, position: 3000 }),
+      ]);
+      taskRepo.updatePosition.mockResolvedValue(undefined);
+
+      await reorderTasksUseCase.execute({ taskId: 2, position: 1 });
+
+      expect(taskRepo.update).not.toHaveBeenCalled();
+      expect(taskRepo.findSiblings).toHaveBeenCalledWith({
+        projectId: 1,
+        status: 0,
+        parentTaskId: null,
+      });
+      expect(taskRepo.updatePosition).toHaveBeenCalledWith(2, 2000);
+    });
+
+    it('should move a task under a new parent', async () => {
+      const moving = task({ id_task: 2, parent_task_id: null });
+      taskRepo.findOneById
+        .mockResolvedValueOnce(moving)
+        .mockResolvedValueOnce(
+          task({ id_task: 7, project_id: 1, parent_task_id: null }),
+        );
+      taskRepo.findSiblings.mockResolvedValue([]);
+      taskRepo.updatePosition.mockResolvedValue(undefined);
+
+      await reorderTasksUseCase.execute({
+        taskId: 2,
+        parentTaskId: 7,
+        position: 0,
+      });
+
+      expect(taskRepo.update).toHaveBeenCalledWith(2, { parent_task_id: 7 });
+      expect(taskRepo.findSiblings).toHaveBeenCalledWith({
+        projectId: 1,
+        status: undefined,
+        parentTaskId: 7,
+      });
+      expect(taskRepo.updatePosition).toHaveBeenCalledWith(2, 1000);
+    });
+
+    it('should move a task to the project root', async () => {
+      const moving = task({ id_task: 2, parent_task_id: 7, status: 1 });
+      taskRepo.findOneById.mockResolvedValue(moving);
+      taskRepo.findSiblings.mockResolvedValue([]);
+      taskRepo.updatePosition.mockResolvedValue(undefined);
+
+      await reorderTasksUseCase.execute({
+        taskId: 2,
+        parentTaskId: null,
+        position: 0,
+      });
+
+      expect(taskRepo.update).toHaveBeenCalledWith(2, { parent_task_id: null });
+      expect(taskRepo.findSiblings).toHaveBeenCalledWith({
+        projectId: 1,
+        status: undefined,
+        parentTaskId: null,
+      });
+    });
+
+    it('should reject moving a task under its own descendant', async () => {
+      const moving = task({ id_task: 2, parent_task_id: null });
+      taskRepo.findOneById
+        .mockResolvedValueOnce(moving)
+        .mockResolvedValueOnce(
+          task({ id_task: 3, project_id: 1, parent_task_id: 2 }),
+        );
+
+      await expect(
+        reorderTasksUseCase.execute({
+          taskId: 2,
+          parentTaskId: 3,
+          position: 0,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject a parent from another project', async () => {
+      const moving = task({ id_task: 2, parent_task_id: null });
+      taskRepo.findOneById
+        .mockResolvedValueOnce(moving)
+        .mockResolvedValueOnce(task({ id_task: 3, project_id: 99 }));
+
+      await expect(
+        reorderTasksUseCase.execute({
+          taskId: 2,
+          parentTaskId: 3,
+          position: 0,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reindex the group and retry when positions collide', async () => {
+      const moving = task({ id_task: 2, position: 1000 });
+      const a = task({ id_task: 3, position: 1000 });
+      const b = task({ id_task: 4, position: 1000 });
+      const positions = new Map<number, number>([
+        [2, 1000],
+        [3, 1000],
+        [4, 1000],
+      ]);
+      taskRepo.findOneById.mockResolvedValue(moving);
+      taskRepo.findSiblings.mockImplementation(() =>
+        Promise.resolve(
+          [moving, a, b].map((t) => ({
+            ...t,
+            position: positions.get(t.id_task) ?? 0,
+          })),
+        ),
+      );
+      taskRepo.updatePosition.mockImplementation((id, position) => {
+        positions.set(id, position);
+        return Promise.resolve();
+      });
+
+      await reorderTasksUseCase.execute({ taskId: 2, position: 1 });
+
+      expect(taskRepo.updatePosition).toHaveBeenNthCalledWith(1, 2, 1000);
+      expect(taskRepo.updatePosition).toHaveBeenNthCalledWith(2, 3, 2000);
+      expect(taskRepo.updatePosition).toHaveBeenNthCalledWith(3, 4, 3000);
+      expect(taskRepo.updatePosition).toHaveBeenNthCalledWith(4, 2, 2500);
     });
   });
 });

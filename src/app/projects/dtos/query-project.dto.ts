@@ -1,4 +1,11 @@
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { VALIDATION } from '../../../common/constants/validation.constants';
 import { ApiProperty } from '@nestjs/swagger';
@@ -68,6 +75,17 @@ export class QueryProjectDto {
   @IsOptional()
   @IsString()
   manager_id?: string;
+
+  @ApiProperty({
+    example: true,
+    description:
+      'true = solo proyectos del usuario (creados o mencionado como responsable)',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  mine?: boolean;
 
   @ApiProperty({
     example: '3,7',

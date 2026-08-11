@@ -63,8 +63,11 @@ export class ProjectsService {
     await this.reorderProjectsUseCase.execute(dto);
   }
 
-  async findKanban(user?: JwtPayload): Promise<ProjectResponseDto[]> {
-    const projects = await this.findProjectsUseCase.findAll(user);
+  async findKanban(
+    query: QueryProjectDto,
+    user?: JwtPayload,
+  ): Promise<ProjectResponseDto[]> {
+    const projects = await this.findProjectsUseCase.findAll(user, query.mine);
     return ProjectResponseDto.fromEntityList(projects);
   }
 

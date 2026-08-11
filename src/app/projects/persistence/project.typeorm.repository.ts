@@ -41,6 +41,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
       dateTo,
       sortBy,
       sortOrder,
+      mine,
     } = query;
     const skip = (page - 1) * limit;
 
@@ -93,6 +94,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
 
     if (user && !isSuperAdmin(user)) {
       this.applyPrivacyFilter(idQb, user);
+      if (mine) this.applyMineFilter(idQb, user);
     }
 
     if (sortBy === 'responsible_name') {
@@ -225,7 +227,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
     await this.repo.update(id, { position });
   }
 
-  async findAll(user?: JwtPayload): Promise<ProjectEntity[]> {
+  async findAll(user?: JwtPayload, mine = false): Promise<ProjectEntity[]> {
     const qb = this.repo
       .createQueryBuilder('project')
       .leftJoinAndSelect('project.responsibles', 'responsibles')
@@ -235,6 +237,7 @@ export class ProjectTypeormRepository implements IProjectRepository {
 
     if (user && !isSuperAdmin(user)) {
       this.applyPrivacyFilter(qb, user);
+      if (mine) this.applyMineFilter(qb, user);
     }
 
     const data = await qb.getMany();
@@ -247,6 +250,21 @@ export class ProjectTypeormRepository implements IProjectRepository {
     }
 
     return data;
+  }
+
+  private applyMineFilter(
+    qb: SelectQueryBuilder<ProjectEntity>,
+    user: JwtPayload,
+  ): void {
+    const userId = user.sub;
+    qb.andWhere(
+      `(project.manager_id = :mineUserId ` +
+        `OR EXISTS ( ` +
+        `SELECT 1 FROM ${DB_SCHEMA}.project_responsibles pr ` +
+        `WHERE pr.project_id = project.id_project AND pr.user_id = :mineUserId ` +
+        `))`,
+      { mineUserId: userId },
+    );
   }
 
   private applyPrivacyFilter(

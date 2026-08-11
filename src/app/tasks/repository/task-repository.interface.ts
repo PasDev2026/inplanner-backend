@@ -14,7 +14,7 @@ export interface ITaskRepository {
   findChildren(parentId: number): Promise<TaskEntity[]>;
   findSiblings(params: {
     projectId: number;
-    status: number;
+    status?: number;
     parentTaskId: number | null;
   }): Promise<TaskEntity[]>;
   updatePosition(id: number, position: number): Promise<void>;

@@ -18,5 +18,5 @@ export interface IProjectRepository {
   isUserInSameArea(userId: string, managerId: string): Promise<boolean>;
   findSiblings(status: number): Promise<ProjectEntity[]>;
   updatePosition(id: number, position: number): Promise<void>;
-  findAll(user?: JwtPayload): Promise<ProjectEntity[]>;
+  findAll(user?: JwtPayload, mine?: boolean): Promise<ProjectEntity[]>;
 }

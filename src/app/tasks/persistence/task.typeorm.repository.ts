@@ -112,15 +112,18 @@ export class TaskTypeormRepository implements ITaskRepository {
 
   async findSiblings(params: {
     projectId: number;
-    status: number;
+    status?: number;
     parentTaskId: number | null;
   }): Promise<TaskEntity[]> {
+    const where: FindOptionsWhere<TaskEntity> = {
+      project_id: params.projectId,
+      parent_task_id: params.parentTaskId ?? IsNull(),
+    };
+    if (params.status !== undefined) {
+      where.status = params.status;
+    }
     return this.repo.find({
-      where: {
-        project_id: params.projectId,
-        status: params.status,
-        parent_task_id: params.parentTaskId ?? IsNull(),
-      },
+      where,
       order: { position: 'ASC' },
     });
   }
