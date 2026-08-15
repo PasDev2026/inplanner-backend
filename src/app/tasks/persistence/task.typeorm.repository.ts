@@ -110,6 +110,18 @@ export class TaskTypeormRepository implements ITaskRepository {
     return children;
   }
 
+  async cascadeStatus(parentId: number, status: number): Promise<void> {
+    const children = await this.repo.find({
+      where: { parent_task_id: parentId },
+    });
+    for (const child of children) {
+      if (child.status !== status) {
+        await this.repo.update(child.id_task, { status });
+      }
+      await this.cascadeStatus(child.id_task, status);
+    }
+  }
+
   async findSiblings(params: {
     projectId: number;
     status?: number;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import 'dotenv/config';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const envSchema = z
@@ -18,6 +18,7 @@ const envSchema = z
     DB_SCHEMA: z.string().default('inplanner'),
     SOCKET_INACTIVITY_TIMEOUT: z.coerce.number().default(28800000),
     JWT_PUBLIC_KEY_PATH: z.string().default('./keys/jwt-public.key'),
+    ATTACHMENT_SIG_SECRET: z.string().min(32),
 
     // Future ML
     ML_API_URL: z.string().default('http://localhost:8000'),

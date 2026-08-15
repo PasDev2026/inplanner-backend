@@ -10,9 +10,10 @@ import { UpdateNoteUseCase } from './use-cases/update-note.use-case';
 import { DeleteNoteUseCase } from './use-cases/delete-note.use-case';
 import { NotesController } from './notes.controller';
 import { NotesService } from './notes.service';
+import { AttachmentsModule } from '../attachments/attachments.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NoteEntity])],
+  imports: [TypeOrmModule.forFeature([NoteEntity]), AttachmentsModule],
   controllers: [NotesController],
   providers: [
     { provide: NOTE_REPOSITORY, useClass: NoteTypeormRepository },

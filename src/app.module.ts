@@ -13,6 +13,8 @@ import { UsersModule } from './app/users/users.module';
 import { ProjectsModule } from './app/projects/projects.module';
 import { TasksModule } from './app/tasks/tasks.module';
 import { NotesModule } from './app/notes/notes.module';
+import { UploadsModule } from './app/uploads/uploads.module';
+import { LinksModule } from './app/links/links.module';
 import { AuthModule } from './app/auth/auth.module';
 import { SocketModule } from './modules/socket/socket.module';
 import { DashboardModule } from './app/dashboard/dashboard.module';
@@ -57,6 +59,8 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     ProjectsModule,
     TasksModule,
     NotesModule,
+    UploadsModule,
+    LinksModule,
     AuthModule,
     SocketModule,
     DashboardModule,

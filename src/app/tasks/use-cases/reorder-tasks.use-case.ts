@@ -37,6 +37,9 @@ export class ReorderTasksUseCase {
     if (statusChanged) {
       await this.taskRepo.update(task.id_task, { status: targetStatus });
     }
+    if (targetStatus === 4) {
+      await this.taskRepo.cascadeStatus(task.id_task, 4);
+    }
 
     let statusFilter: number | undefined;
     if (dto.targetStatus !== undefined) {

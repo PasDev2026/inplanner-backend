@@ -46,6 +46,7 @@ describe('TasksModule', () => {
       'update',
       'delete',
       'findChildren',
+      'cascadeStatus',
       'findSiblings',
       'updatePosition',
       'getMaxPosition',
@@ -378,6 +379,23 @@ describe('TasksModule', () => {
           position: 0,
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should cascade completion to descendants when status becomes 4', async () => {
+      const moving = task({ id_task: 2, status: 0 });
+      taskRepo.findOneById.mockResolvedValue(moving);
+      taskRepo.findSiblings.mockResolvedValue([]);
+      taskRepo.cascadeStatus.mockResolvedValue(undefined);
+      taskRepo.updatePosition.mockResolvedValue(undefined);
+
+      await reorderTasksUseCase.execute({
+        taskId: 2,
+        targetStatus: 4,
+        position: 0,
+      });
+
+      expect(taskRepo.update).toHaveBeenCalledWith(2, { status: 4 });
+      expect(taskRepo.cascadeStatus).toHaveBeenCalledWith(2, 4);
     });
 
     it('should reindex the group and retry when positions collide', async () => {

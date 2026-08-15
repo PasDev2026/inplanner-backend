@@ -12,6 +12,7 @@ export interface ITaskRepository {
   update(id: number, partial: Partial<TaskEntity>): Promise<void>;
   delete(task: TaskEntity): Promise<void>;
   findChildren(parentId: number): Promise<TaskEntity[]>;
+  cascadeStatus(parentId: number, status: number): Promise<void>;
   findSiblings(params: {
     projectId: number;
     status?: number;
