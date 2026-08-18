@@ -20,6 +20,12 @@ const envSchema = z
     JWT_PUBLIC_KEY_PATH: z.string().default('./keys/jwt-public.key'),
     ATTACHMENT_SIG_SECRET: z.string().min(32),
 
+    // AWS S3
+    AWS_REGION: z.string().min(1),
+    AWS_ACCESS_KEY_ID: z.string().min(1),
+    AWS_SECRET_ACCESS_KEY: z.string().min(1),
+    S3_BUCKET_NAME: z.string().min(1),
+
     // Future ML
     ML_API_URL: z.string().default('http://localhost:8000'),
     REDIS_HOST: z.string().default('localhost'),

@@ -9,13 +9,18 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import * as path from 'path';
+import {
+  GetObjectCommand,
+  type GetObjectCommandOutput,
+} from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
 import { SkipTransform } from '../../common/decorators/skip-transform.decorator';
 import { AttachmentsService } from './attachments.service';
 import { QueryAttachmentDto } from './dtos/query-attachment.dto';
 import { AttachmentResponseDto } from './dtos/response/attachment-response.dto';
+import { s3, S3_BUCKET } from '../uploads/s3.client';
 
 @Controller('attachments')
 export class AttachmentsController {
@@ -42,11 +47,12 @@ export class AttachmentsController {
   ): Promise<void> {
     const file = await this.resolveSigned(id, sig, undefined);
     if (dl) {
-      res.download(file.absolutePath, path.basename(file.fileName));
-      return;
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${file.fileName}"`,
+      );
     }
-    res.setHeader('Content-Type', file.mimeType);
-    res.sendFile(file.absolutePath);
+    await this.streamFile(res, file.key, file.mimeType);
   }
 
   @Get(':id/preview/:index')
@@ -59,15 +65,14 @@ export class AttachmentsController {
     @Res() res: Response,
   ): Promise<void> {
     const file = await this.resolveSigned(id, sig, index);
-    res.setHeader('Content-Type', file.mimeType);
-    res.sendFile(file.absolutePath);
+    await this.streamFile(res, file.key, file.mimeType);
   }
 
   private async resolveSigned(
     id: string,
     sig: string,
     previewIndex: number | undefined,
-  ): Promise<{ absolutePath: string; mimeType: string; fileName: string }> {
+  ): Promise<{ key: string; mimeType: string; fileName: string }> {
     const path =
       `/attachments/${id}` +
       (previewIndex === undefined ? '' : `/preview/${previewIndex}`);
@@ -80,5 +85,27 @@ export class AttachmentsController {
       throw new NotFoundException('Preview no encontrado');
     }
     return file;
+  }
+
+  private async streamFile(
+    res: Response,
+    key: string,
+    mimeType: string,
+  ): Promise<void> {
+    let result: GetObjectCommandOutput;
+    try {
+      result = await s3.send(
+        new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }),
+      );
+    } catch {
+      throw new NotFoundException('Archivo no encontrado');
+    }
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Length', String(result.ContentLength ?? ''));
+    if (result.Body instanceof Readable) {
+      result.Body.pipe(res);
+    } else {
+      res.end();
+    }
   }
 }

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import * as path from 'path';
 import { CreateAttachmentUseCase } from './use-cases/create-attachment.use-case';
 import { FindAttachmentsByTaskUseCase } from './use-cases/find-attachments-by-task.use-case';
 import { FindAttachmentUseCase } from './use-cases/find-attachment.use-case';
@@ -65,10 +64,10 @@ export class AttachmentsService {
   resolveFile(
     attachment: AttachmentEntity,
     previewIndex: number | undefined,
-  ): { absolutePath: string; mimeType: string; fileName: string } | null {
+  ): { key: string; mimeType: string; fileName: string } | null {
     if (previewIndex === undefined) {
       return {
-        absolutePath: path.resolve(attachment.file_path),
+        key: attachment.file_path,
         mimeType: attachment.mime_type,
         fileName: attachment.file_name,
       };
@@ -78,9 +77,7 @@ export class AttachmentsService {
       return null;
     }
     return {
-      absolutePath: path.resolve(
-        previewFileName(attachment.file_path, preview.width),
-      ),
+      key: previewFileName(attachment.file_path, preview.width),
       mimeType: 'image/webp',
       fileName: previewFileName(attachment.file_path, preview.width),
     };

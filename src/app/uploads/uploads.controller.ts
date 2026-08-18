@@ -7,10 +7,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { randomUUID } from 'node:crypto';
-import { extname, join } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { memoryStorage } from 'multer';
+import { extname } from 'node:path';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -21,29 +19,17 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { AttachmentsService } from '../attachments/attachments.service';
 import {
-  PREVIEW_WIDTHS,
-  previewFileName,
-} from '../attachments/attachment-files.util';
-import type { AttachmentPreview } from '../attachments/entities/attachment.entity';
-
-const UPLOAD_DIR = join(process.cwd(), 'uploads', 'notes');
-
-const ALLOWED_MIMETYPES: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  UploadsService,
+  ALLOWED_MIMETYPES,
+  MAX_FILE_SIZE,
+} from './uploads.service';
 
 @ApiTags('Uploads')
 @ApiBearerAuth('access-token')
 @Controller('uploads')
 export class UploadsController {
-  constructor(private readonly attachmentsService: AttachmentsService) {}
+  constructor(private readonly uploadsService: UploadsService) {}
 
   @Post()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
@@ -65,16 +51,7 @@ export class UploadsController {
   @ApiResponse({ status: 201, description: 'Imagen subida, adjunto creado' })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          mkdirSync(UPLOAD_DIR, { recursive: true });
-          cb(null, UPLOAD_DIR);
-        },
-        filename: (_req, file, cb) => {
-          const extension = ALLOWED_MIMETYPES[file.mimetype];
-          cb(null, `${randomUUID()}${extension}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE },
       fileFilter: (_req, file, cb) => {
         const extension = ALLOWED_MIMETYPES[file.mimetype];
@@ -106,32 +83,6 @@ export class UploadsController {
     if (!Number.isInteger(taskIdNumber) || taskIdNumber <= 0) {
       throw new BadRequestException('task_id invalido');
     }
-
-    const { default: sharp } = await import('sharp');
-    const previews: AttachmentPreview[] = [];
-    for (const width of PREVIEW_WIDTHS) {
-      const outPath = previewFileName(file.path, width);
-      const info = await sharp(file.path)
-        .resize({ width })
-        .webp({ quality: 80 })
-        .toFile(outPath);
-      previews.push({
-        width: info.width,
-        height: info.height,
-        bytes: info.size,
-      });
-    }
-
-    return this.attachmentsService.create(
-      {
-        file_name: file.originalname,
-        mime_type: file.mimetype,
-        bytes: file.size,
-        file_path: file.path,
-        task_id: taskIdNumber,
-        previews,
-      },
-      userId,
-    );
+    return this.uploadsService.upload(file, taskIdNumber, userId);
   }
 }
