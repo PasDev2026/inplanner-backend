@@ -21,6 +21,7 @@ import { DashboardModule } from './app/dashboard/dashboard.module';
 import { ReportsModule } from './app/reports/reports.module';
 import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { UserEntity } from './app/users/entities/user.entity';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
 @Module({
@@ -52,6 +53,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+    TypeOrmModule.forFeature([UserEntity]),
     CentralizadoModule,
     CentralizadoHttpModule,
     AreasModule,

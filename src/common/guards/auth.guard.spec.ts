@@ -2,12 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthGuard } from './auth.guard';
+import { UserEntity } from '../../app/users/entities/user.entity';
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
   let jwtService: { verifyAsync: jest.Mock };
   let reflector: { getAllAndOverride: jest.Mock };
+  let userRepo: { findOne: jest.Mock };
 
   beforeAll(() => {
     process.env.JWT_SECRET = 'test-secret';
@@ -16,12 +19,14 @@ describe('AuthGuard', () => {
   beforeEach(async () => {
     jwtService = { verifyAsync: jest.fn() };
     reflector = { getAllAndOverride: jest.fn() };
+    userRepo = { findOne: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthGuard,
         { provide: JwtService, useValue: jwtService },
         { provide: Reflector, useValue: reflector },
+        { provide: getRepositoryToken(UserEntity), useValue: userRepo },
       ],
     }).compile();
 
@@ -70,7 +75,13 @@ describe('AuthGuard', () => {
     });
 
     it('should return true and set user on request when token is valid', async () => {
-      const payload = { sub: 1, username: 'testuser', roles: [] };
+      const payload = {
+        sub: 1,
+        username: 'testuser',
+        roles: [],
+        tipo: 'TRABAJADOR',
+        sede_activa: { sede_id: 'sede-1', rol_codigo: 'PERSONAL' },
+      };
       reflector.getAllAndOverride.mockReturnValue(false);
       jwtService.verifyAsync.mockResolvedValue(payload);
       const request: Record<string, unknown> = {
@@ -90,7 +101,13 @@ describe('AuthGuard', () => {
     });
 
     it('should extract token from cookie when Bearer header is absent', async () => {
-      const payload = { sub: 1, username: 'testuser', roles: [] };
+      const payload = {
+        sub: 1,
+        username: 'testuser',
+        roles: [],
+        tipo: 'TRABAJADOR',
+        sede_activa: { sede_id: 'sede-1', rol_codigo: 'PERSONAL' },
+      };
       reflector.getAllAndOverride.mockReturnValue(false);
       jwtService.verifyAsync.mockResolvedValue(payload);
       const request = {
@@ -107,7 +124,7 @@ describe('AuthGuard', () => {
 
       expect(result).toBe(true);
       expect(jwtService.verifyAsync).toHaveBeenCalledWith('cookie-token', {
-        secret: process.env.JWT_SECRET,
+        algorithms: ['RS256'],
       });
     });
   });
