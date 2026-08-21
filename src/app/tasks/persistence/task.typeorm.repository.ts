@@ -99,7 +99,7 @@ export class TaskTypeormRepository implements ITaskRepository {
   async findChildren(parentId: number): Promise<TaskEntity[]> {
     const children = await this.repo.find({
       where: { parent_task_id: parentId },
-      relations: { assignments: { user: true } },
+      relations: { assignments: { user: true }, notes: true },
       order: { position: 'ASC' },
     });
 
