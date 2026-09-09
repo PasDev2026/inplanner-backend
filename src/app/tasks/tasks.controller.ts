@@ -57,7 +57,7 @@ export class TasksController {
   }
 
   @Get(':id')
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({
     summary: 'Obtener tarea por ID',
     description: 'Devuelve una tarea espec\u00edfica por su ID',
@@ -152,7 +152,7 @@ export class TasksController {
   }
 
   @Get(':id/children')
-  @Throttle({ default: { limit: 180, ttl: 60000 } })
+  @Throttle({ default: { limit: 200, ttl: 60000 } })
   @ApiOperation({
     summary: 'Obtener subtareas',
     description: 'Devuelve las subtareas directas de una tarea',

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, IsNull, Repository } from 'typeorm';
+import {
+  EntityManager,
+  FindOptionsWhere,
+  ILike,
+  IsNull,
+  Repository,
+} from 'typeorm';
 import { TaskEntity } from '../entities/task.entity';
 import type { ITaskRepository } from '../repository/task-repository.interface';
 import { QueryTaskDto } from '../dtos/query-task.dto';
@@ -13,8 +19,12 @@ export class TaskTypeormRepository implements ITaskRepository {
     private readonly repo: Repository<TaskEntity>,
   ) {}
 
-  async save(task: TaskEntity): Promise<TaskEntity> {
-    return this.repo.save(task);
+  private scopedRepo(manager?: EntityManager) {
+    return manager ? manager.getRepository(TaskEntity) : this.repo;
+  }
+
+  async save(task: TaskEntity, manager?: EntityManager): Promise<TaskEntity> {
+    return this.scopedRepo(manager).save(task);
   }
 
   async findWithPagination(
@@ -144,13 +154,17 @@ export class TaskTypeormRepository implements ITaskRepository {
     await this.repo.update(id, { position });
   }
 
-  async getMaxPosition(params: {
-    projectId: number;
-    status: number;
-    parentTaskId: number | null;
-  }): Promise<number> {
+  async getMaxPosition(
+    params: {
+      projectId: number;
+      status: number;
+      parentTaskId: number | null;
+    },
+    manager?: EntityManager,
+  ): Promise<number> {
     type MaxResult = { max: number | null };
-    const result = await this.repo
+    const repo = this.scopedRepo(manager);
+    const result = await repo
       .createQueryBuilder('task')
       .select('MAX(task.position)', 'max')
       .where('task.project_id = :projectId', { projectId: params.projectId })

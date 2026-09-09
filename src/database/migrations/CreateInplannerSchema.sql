@@ -127,3 +127,37 @@ create table inplanner.notes
 
 create index idx_notes_task on inplanner.notes (task_id);
 create index idx_notes_created_by on inplanner.notes (created_by_id);
+
+-- ============================================================
+-- templates (plantillas de tareas, soft-delete via estado)
+-- ============================================================
+create table inplanner.templates
+(
+    id_template   serial primary key,
+    template_name varchar(150) not null,
+    owner_id      uuid         not null references inplanner.users on delete restrict,
+    estado        boolean      default true not null,
+    created_at    timestamp    default current_timestamp,
+    updated_at    timestamp    default current_timestamp
+);
+
+create index idx_templates_owner on inplanner.templates (owner_id);
+
+-- ============================================================
+-- template_items (jerarquia tarea/subtarea de la plantilla)
+-- ============================================================
+create table inplanner.template_items
+(
+    id_item          serial primary key,
+    template_id      integer          not null references inplanner.templates on delete cascade,
+    parent_item_id   integer          references inplanner.template_items on delete cascade,
+    item_name        varchar(150)     not null,
+    item_description text,
+    position         double precision default 1000,
+    priority         smallint,
+    created_at       timestamp        default current_timestamp,
+    updated_at       timestamp        default current_timestamp
+);
+
+create index idx_template_items_template on inplanner.template_items (template_id);
+create index idx_template_items_parent   on inplanner.template_items (parent_item_id);

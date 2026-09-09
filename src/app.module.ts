@@ -12,6 +12,7 @@ import { AreasModule } from './app/areas/areas.module';
 import { UsersModule } from './app/users/users.module';
 import { ProjectsModule } from './app/projects/projects.module';
 import { TasksModule } from './app/tasks/tasks.module';
+import { TemplatesModule } from './app/templates/templates.module';
 import { NotesModule } from './app/notes/notes.module';
 import { UploadsModule } from './app/uploads/uploads.module';
 import { LinksModule } from './app/links/links.module';
@@ -60,6 +61,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     UsersModule,
     ProjectsModule,
     TasksModule,
+    TemplatesModule,
     NotesModule,
     UploadsModule,
     LinksModule,

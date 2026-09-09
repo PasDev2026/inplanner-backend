@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { TaskAssignmentEntity } from '../entities/task-assignment.entity';
 import { CreateTaskAssignmentDto } from '../dtos/create-task-assignment.dto';
 import type { ITaskAssignmentRepository } from '../repository/task-assignment-repository.interface';
@@ -21,9 +21,15 @@ export class TaskAssignmentTypeormRepository implements ITaskAssignmentRepositor
     });
   }
 
-  async create(dto: CreateTaskAssignmentDto): Promise<TaskAssignmentEntity> {
-    const assignment = this.repo.create(dto);
-    return this.repo.save(assignment);
+  async create(
+    dto: CreateTaskAssignmentDto,
+    manager?: EntityManager,
+  ): Promise<TaskAssignmentEntity> {
+    const repo = manager
+      ? manager.getRepository(TaskAssignmentEntity)
+      : this.repo;
+    const assignment = repo.create(dto);
+    return repo.save(assignment);
   }
 
   async findByTaskId(taskId: number): Promise<TaskAssignmentEntity[]> {

@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import type { ITaskRepository } from '../repository/task-repository.interface';
 import { TASK_REPOSITORY } from '../repository/task-repository.interface';
 import type { ITaskAssignmentRepository } from '../repository/task-assignment-repository.interface';
@@ -15,7 +16,11 @@ export class CreateTaskUseCase {
     private readonly assignmentRepo: ITaskAssignmentRepository,
   ) {}
 
-  async execute(dto: CreateTaskDto, createdById: string): Promise<TaskEntity> {
+  async execute(
+    dto: CreateTaskDto,
+    createdById: string,
+    manager?: EntityManager,
+  ): Promise<TaskEntity> {
     const task = new TaskEntity();
     Object.assign(task, dto, {
       created_by_id: createdById,
@@ -24,18 +29,34 @@ export class CreateTaskUseCase {
     });
     if (task.position === undefined || task.position === null) {
       task.position =
-        (await this.taskRepo.getMaxPosition({
-          projectId: dto.project_id,
-          status: task.status,
-          parentTaskId: dto.parent_task_id ?? null,
-        })) + 1000;
+        (await this.taskRepo.getMaxPosition(
+          {
+            projectId: dto.project_id,
+            status: task.status,
+            parentTaskId: dto.parent_task_id ?? null,
+          },
+          manager,
+        )) + 1000;
     }
-    const saved = await this.taskRepo.save(task);
+    const saved =
+      manager !== undefined
+        ? await this.taskRepo.save(task, manager)
+        : await this.taskRepo.save(task);
 
-    await this.assignmentRepo.create({
-      task_id: saved.id_task,
-      user_id: createdById,
-    });
+    if (manager !== undefined) {
+      await this.assignmentRepo.create(
+        {
+          task_id: saved.id_task,
+          user_id: createdById,
+        },
+        manager,
+      );
+    } else {
+      await this.assignmentRepo.create({
+        task_id: saved.id_task,
+        user_id: createdById,
+      });
+    }
 
     return saved;
   }

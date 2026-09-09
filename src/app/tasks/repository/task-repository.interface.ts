@@ -1,4 +1,5 @@
 import { InjectionToken } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { TaskEntity } from '../entities/task.entity';
 import { QueryTaskDto } from '../dtos/query-task.dto';
 import { PaginatedResult } from '../../../common/interfaces/pagination.interface';
@@ -6,7 +7,7 @@ import { PaginatedResult } from '../../../common/interfaces/pagination.interface
 export const TASK_REPOSITORY = 'TASK_REPOSITORY' as InjectionToken;
 
 export interface ITaskRepository {
-  save(task: TaskEntity): Promise<TaskEntity>;
+  save(task: TaskEntity, manager?: EntityManager): Promise<TaskEntity>;
   findWithPagination(query: QueryTaskDto): Promise<PaginatedResult<TaskEntity>>;
   findOneById(id: number): Promise<TaskEntity | null>;
   update(id: number, partial: Partial<TaskEntity>): Promise<void>;
@@ -19,9 +20,12 @@ export interface ITaskRepository {
     parentTaskId: number | null;
   }): Promise<TaskEntity[]>;
   updatePosition(id: number, position: number): Promise<void>;
-  getMaxPosition(params: {
-    projectId: number;
-    status: number;
-    parentTaskId: number | null;
-  }): Promise<number>;
+  getMaxPosition(
+    params: {
+      projectId: number;
+      status: number;
+      parentTaskId: number | null;
+    },
+    manager?: EntityManager,
+  ): Promise<number>;
 }

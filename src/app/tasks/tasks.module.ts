@@ -42,6 +42,11 @@ import { TasksService } from './tasks.service';
     ReorderTasksUseCase,
     TasksService,
   ],
-  exports: [TypeOrmModule],
+  exports: [
+    TypeOrmModule,
+    CreateTaskUseCase,
+    TASK_REPOSITORY,
+    TASK_ASSIGNMENT_REPOSITORY,
+  ],
 })
 export class TasksModule {}

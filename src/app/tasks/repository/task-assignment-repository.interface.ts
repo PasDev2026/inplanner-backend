@@ -1,4 +1,5 @@
 import { InjectionToken } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { TaskAssignmentEntity } from '../entities/task-assignment.entity';
 import { CreateTaskAssignmentDto } from '../dtos/create-task-assignment.dto';
 
@@ -10,7 +11,10 @@ export interface ITaskAssignmentRepository {
     taskId: number,
     userId: string,
   ): Promise<TaskAssignmentEntity | null>;
-  create(dto: CreateTaskAssignmentDto): Promise<TaskAssignmentEntity>;
+  create(
+    dto: CreateTaskAssignmentDto,
+    manager?: EntityManager,
+  ): Promise<TaskAssignmentEntity>;
   findByTaskId(taskId: number): Promise<TaskAssignmentEntity[]>;
   delete(assignment: TaskAssignmentEntity): Promise<void>;
 }
