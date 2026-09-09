@@ -4,10 +4,7 @@ import { Repository } from 'typeorm';
 import { TaskEntity } from '../../tasks/entities/task.entity';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
 import { DB_SCHEMA } from '../constants/report.constants';
-import {
-  isSuperAdmin,
-  userSedeIds,
-} from '../../../common/helpers/user-auth.helper';
+import { isSuperAdmin } from '../../../common/helpers/user-auth.helper';
 import type { IReportsRepository } from '../repository/reports-repository.interface';
 import type {
   ActivityReportRow,
@@ -170,27 +167,21 @@ export class ReportsTypeormRepository implements IReportsRepository {
   ): FiltersBuilder {
     const b = new FiltersBuilder();
     if (!isSuperAdmin(user)) {
+      // scope por área con fallback a solo-suyo si el usuario no
+      // tiene area_id; reemplaza la lógica de privacidad de proyectos
       const userId = b.param(user.sub);
-      const privacy = [
-        `p.manager_id = ${userId}`,
-        `p.privacy_level = 0`,
-        `(p.privacy_level = 4 AND p.manager_id = ${userId})`,
-        `(p.privacy_level = 3 AND (p.manager_id = ${userId} OR EXISTS (
-          SELECT 1 FROM ${DB_SCHEMA}.project_responsibles pr
-          WHERE pr.project_id = p.id_project AND pr.user_id = ${userId}
-        )))`,
-        `(p.privacy_level = 1 AND pm.area_id IS NOT NULL AND pm.area_id = (
-          SELECT u.area_id FROM ${DB_SCHEMA}.users u WHERE u.id_user = ${userId}
-        ))`,
-      ];
-      const userSedes = userSedeIds(user);
-      if (userSedes.length > 0) {
-        const sedes = b.param(userSedes);
-        privacy.push(
-          `(p.privacy_level = 2 AND p.sede_id = ANY(${sedes}::uuid[]))`,
-        );
-      }
-      b.where.push(`(${privacy.join(' OR ')})`);
+      b.where.push(`(
+        EXISTS (
+          SELECT 1 FROM ${DB_SCHEMA}.task_assignments ta
+          JOIN ${DB_SCHEMA}.users au ON au.id_user = ta.user_id
+          WHERE ta.task_id = t.id_task
+            AND au.area_id = (SELECT u.area_id FROM ${DB_SCHEMA}.users u WHERE u.id_user = ${userId})
+        )
+        OR EXISTS (
+          SELECT 1 FROM ${DB_SCHEMA}.task_assignments ta
+          WHERE ta.task_id = t.id_task AND ta.user_id = ${userId}
+        )
+      )`);
     }
     b.addSearch(searchColumns, filters.search);
     b.addIntList('p.status', filters.status);
