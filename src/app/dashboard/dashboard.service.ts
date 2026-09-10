@@ -75,6 +75,16 @@ export class DashboardService {
     return this.dashboardRepo.getMyUpcomingDeadlines(userId, limit);
   }
 
+  async getMyActivities(userId: string, status?: number, limit = 10) {
+    if (status !== undefined && ![0, 1, 2, 3, 4].includes(status)) {
+      throw new BadRequestException(
+        'Estado inválido (0=Pendiente, 1=En espera, 2=En progreso, 3=En revisión, 4=Completado)',
+      );
+    }
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    return this.dashboardRepo.getMyActivities(userId, status, safeLimit);
+  }
+
   async getMyWeeklyActivity(userId: string, from?: string, to?: string) {
     const toDate = this.parseDateParam(to) ?? new Date();
     const fromDate =

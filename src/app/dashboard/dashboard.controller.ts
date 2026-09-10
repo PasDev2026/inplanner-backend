@@ -89,4 +89,21 @@ export class DashboardController {
   ) {
     return this.dashboardService.getMyUpcomingDeadlines(userId, limit);
   }
+
+  @Get('my-activities')
+  @ApiOperation({
+    summary:
+      'Últimas actividades del usuario (tareas asignadas, filtrables por estado)',
+    description:
+      'Lista las últimas tareas asignadas al usuario. Filtro opcional por estado (0=Pendiente, 1=En espera, 2=En progreso, 3=En revisión, 4=Completado)',
+  })
+  getMyActivities(
+    @CurrentUser('sub') userId: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('status') status?: string,
+  ) {
+    const parsedStatus =
+      status == null || status === '' ? undefined : Number(status);
+    return this.dashboardService.getMyActivities(userId, parsedStatus, limit);
+  }
 }

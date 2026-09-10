@@ -80,6 +80,16 @@ export interface ProjectProgressItem {
   completed: number;
 }
 
+export interface MyActivityItem {
+  id_task: number;
+  task_name: string;
+  created_at: Date;
+  status: number;
+  priority: number;
+  project_id: number;
+  project_name: string;
+}
+
 export interface WeeklyActivityItem {
   week: string;
   created: number;
@@ -131,4 +141,9 @@ export interface IDashboardRepository {
     from: Date,
     to: Date,
   ): Promise<WeeklyActivityItem[]>;
+  getMyActivities(
+    userId: string,
+    status: number | undefined,
+    limit: number,
+  ): Promise<MyActivityItem[]>;
 }

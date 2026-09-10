@@ -17,6 +17,7 @@ import type {
   TasksByUserItem,
   UpcomingDeadlineItem,
   WeeklyActivityItem,
+  MyActivityItem,
 } from '../repository/dashboard-repository.interface';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
 import {
@@ -361,5 +362,29 @@ export class DashboardTypeormRepository implements IDashboardRepository {
     GROUP BY date_trunc('week', ev.d)
     ORDER BY date_trunc('week', ev.d)`;
     return this.taskRepo.query<WeeklyActivityItem[]>(sql, [userId, from, to]);
+  }
+
+  async getMyActivities(
+    userId: string,
+    status: number | undefined,
+    limit: number,
+  ): Promise<MyActivityItem[]> {
+    const params: unknown[] = [userId];
+    let statusWhere = '';
+    if (status !== undefined) {
+      params.push(status);
+      statusWhere = ' AND t.status = $2';
+    }
+    params.push(limit);
+    const sql = `SELECT
+      t.id_task, t.task_name, t.created_at, t.status, t.priority,
+      p.id_project, p.name_project AS project_name
+    FROM ${DB_SCHEMA}.tasks t
+    JOIN ${DB_SCHEMA}.task_assignments ta ON ta.task_id = t.id_task
+    JOIN ${DB_SCHEMA}.projects p ON p.id_project = t.project_id
+    WHERE ta.user_id = $1${statusWhere}
+    ORDER BY t.created_at DESC, t.id_task DESC
+    LIMIT $${params.length}`;
+    return this.taskRepo.query<MyActivityItem[]>(sql, params);
   }
 }
