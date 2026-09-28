@@ -9,9 +9,18 @@ import {
   Query,
   ParseIntPipe,
   ParseUUIDPipe,
+  BadRequestException,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { extname } from 'node:path';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -25,7 +34,32 @@ import { QueryTaskDto } from './dtos/query-task.dto';
 import { CreateTaskAssignmentDto } from './dtos/create-task-assignment.dto';
 import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
 import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
+import { ImportTasksDto } from './dtos/import-tasks.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipTransform } from '../../common/decorators/skip-transform.decorator';
+import { IMPORT_TEMPLATE_MAX_BYTES } from './lib/import-template';
+
+const IMPORT_ALLOWED_EXTENSIONS = ['.xlsx', '.csv'];
+const IMPORT_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function importFileInterceptor() {
+  return FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: IMPORT_TEMPLATE_MAX_BYTES },
+    fileFilter: (_req, file, cb) => {
+      const extension = extname(file.originalname).toLowerCase();
+      if (!IMPORT_ALLOWED_EXTENSIONS.includes(extension)) {
+        cb(
+          new BadRequestException('Solo se permiten archivos .xlsx o .csv'),
+          false,
+        );
+        return;
+      }
+      cb(null, true);
+    },
+  });
+}
 
 @ApiTags('Tareas')
 @ApiBearerAuth('access-token')
@@ -43,6 +77,105 @@ export class TasksController {
   @ApiResponse({ status: 201, description: 'Tarea creada exitosamente' })
   create(@Body() dto: CreateTaskDto, @CurrentUser('sub') userId: string) {
     return this.tasksService.create(dto, userId);
+  }
+
+  @Post('import')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Importar actividades',
+    description:
+      'Crea tareas y subtareas desde un archivo Excel (.xlsx) o CSV. ' +
+      'Columnas: Tarea, Descripcion, Nivel, Estado. Devuelve las tareas creadas.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'integer', description: 'ID del proyecto' },
+        parent_task_id: {
+          type: 'integer',
+          nullable: true,
+          description: 'ID de la tarea padre (opcional)',
+        },
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['project_id', 'file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Tareas creadas desde el archivo' })
+  @ApiResponse({
+    status: 400,
+    description: 'Archivo inválido o sin actividades',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Proyecto o tarea padre no encontrada',
+  })
+  @UseInterceptors(importFileInterceptor())
+  import(
+    @Body() dto: ImportTasksDto,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser('sub') userId: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Archivo requerido');
+    }
+    return this.tasksService.import(dto, file, userId);
+  }
+
+  @Post('import/preview')
+  @Throttle({ default: { limit: 40, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Previsualizar importación',
+    description:
+      'Analiza el archivo y devuelve las filas válidas, las ignoradas y los errores con su fila exacta, sin crear tareas',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'integer', description: 'ID del proyecto' },
+        parent_task_id: {
+          type: 'integer',
+          nullable: true,
+          description: 'ID de la tarea padre (opcional)',
+        },
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['project_id', 'file'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado del análisis del archivo',
+  })
+  @ApiResponse({ status: 400, description: 'Archivo inválido' })
+  @UseInterceptors(importFileInterceptor())
+  previewImport(
+    @Body() dto: ImportTasksDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Archivo requerido');
+    }
+    return this.tasksService.preview(dto, file);
+  }
+
+  @Get('import/template')
+  @SkipTransform()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Descargar plantilla de importación',
+    description: 'Descarga el archivo Excel de ejemplo con el formato válido',
+  })
+  async downloadImportTemplate(): Promise<StreamableFile> {
+    const buffer = await this.tasksService.getImportTemplate();
+    return new StreamableFile(buffer, {
+      type: IMPORT_MIME_TYPE,
+      disposition: 'attachment; filename="Plantilla_Importar_Actividades.xlsx"',
+    });
   }
 
   @Get()

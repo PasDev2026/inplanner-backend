@@ -10,12 +10,16 @@ import { FindAssignmentsUseCase } from './use-cases/find-assignments.use-case';
 import { RemoveAssignmentUseCase } from './use-cases/remove-assignment.use-case';
 import { FindChildrenUseCase } from './use-cases/find-children.use-case';
 import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
+import { ImportTasksUseCase } from './use-cases/import-tasks.use-case';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 import { QueryTaskDto } from './dtos/query-task.dto';
 import { CreateTaskAssignmentDto } from './dtos/create-task-assignment.dto';
 import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
 import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
+import { ImportTasksDto } from './dtos/import-tasks.dto';
+import { ImportPreviewDto } from './dtos/response/import-preview.dto';
+import { buildImportTemplateBuffer } from './lib/import-template';
 import { TaskResponseDto } from './dtos/response/task-response.dto';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 
@@ -33,6 +37,7 @@ export class TasksService {
     private readonly removeAssignmentUseCase: RemoveAssignmentUseCase,
     private readonly findChildrenUseCase: FindChildrenUseCase,
     private readonly reorderTasksUseCase: ReorderTasksUseCase,
+    private readonly importTasksUseCase: ImportTasksUseCase,
   ) {}
 
   async create(
@@ -96,5 +101,25 @@ export class TasksService {
 
   async reorder(dto: ReorderTaskDto): Promise<void> {
     await this.reorderTasksUseCase.execute(dto);
+  }
+
+  async import(
+    dto: ImportTasksDto,
+    file: Express.Multer.File,
+    userId: string,
+  ): Promise<TaskResponseDto[]> {
+    const tasks = await this.importTasksUseCase.execute(dto, file, userId);
+    return TaskResponseDto.fromEntityList(tasks);
+  }
+
+  preview(
+    dto: ImportTasksDto,
+    file: Express.Multer.File,
+  ): Promise<ImportPreviewDto> {
+    return this.importTasksUseCase.preview(dto, file);
+  }
+
+  getImportTemplate(): Promise<Buffer> {
+    return buildImportTemplateBuffer();
   }
 }
