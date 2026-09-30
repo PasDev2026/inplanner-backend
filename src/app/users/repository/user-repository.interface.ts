@@ -14,6 +14,7 @@ export interface IUsersRepository {
   save(user: UserEntity): Promise<UserEntity>;
   findWithPagination(query: QueryUserDto): Promise<PaginatedResult<UserEntity>>;
   findByIdWithRelations(id: string): Promise<UserEntity | null>;
+  findByPersonaUuid(personaUuid: string): Promise<UserEntity | null>;
   softDelete(id: string): Promise<void>;
   findAvailable(): Promise<AvailableUser[]>;
 }

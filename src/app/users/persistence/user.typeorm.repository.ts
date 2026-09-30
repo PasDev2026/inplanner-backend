@@ -71,6 +71,10 @@ export class UserTypeormRepository implements IUsersRepository {
     });
   }
 
+  async findByPersonaUuid(personaUuid: string): Promise<UserEntity | null> {
+    return this.repo.findOne({ where: { persona_uuid: personaUuid } });
+  }
+
   async softDelete(id: string): Promise<void> {
     await this.repo.update(id, { estado: false });
   }

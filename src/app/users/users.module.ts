@@ -8,11 +8,13 @@ import { FindUserUseCase } from './use-cases/find-user.use-case';
 import { UpdateUserUseCase } from './use-cases/update-user.use-case';
 import { DeleteUserUseCase } from './use-cases/delete-user.use-case';
 import { FindAvailableUsersUseCase } from './use-cases/find-available-users.use-case';
+import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { CentralizadoModule } from '../centralizado/centralizado.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity]), CentralizadoModule],
   controllers: [UsersController],
   providers: [
     { provide: USERS_REPOSITORY, useClass: UserTypeormRepository },
@@ -21,6 +23,7 @@ import { UsersService } from './users.service';
     FindAvailableUsersUseCase,
     UpdateUserUseCase,
     DeleteUserUseCase,
+    CreateUserUseCase,
     UsersService,
   ],
   exports: [TypeOrmModule],

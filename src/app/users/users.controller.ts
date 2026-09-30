@@ -1,11 +1,13 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Body,
   Param,
   Query,
+  Req,
   ParseUUIDPipe,
   SerializeOptions,
 } from '@nestjs/common';
@@ -17,8 +19,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
 import { QueryUserDto } from './dtos/query-user.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
@@ -28,6 +32,22 @@ import { Role } from '../../common/enums/role.enum';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  @Roles(Role.SUPER_ADMINISTRADOR)
+  @SerializeOptions({ groups: ['user-detail'] })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Crear usuario',
+    description:
+      'Crea la persona y el usuario (con contraseña) en centralizado y lo refleja en inplanner (requiere SUPER_ADMIN)',
+  })
+  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
+  @ApiResponse({ status: 409, description: 'Documento o email duplicado' })
+  create(@Body() dto: CreateUserDto, @Req() req: Request) {
+    const token = req.headers.authorization?.split(' ')[1] ?? '';
+    return this.usersService.create(dto, token);
+  }
 
   @Get()
   @Roles(Role.SUPER_ADMINISTRADOR, Role.JEFATURA)

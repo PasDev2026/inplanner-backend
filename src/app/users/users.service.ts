@@ -4,7 +4,9 @@ import { FindUserUseCase } from './use-cases/find-user.use-case';
 import { FindAvailableUsersUseCase } from './use-cases/find-available-users.use-case';
 import { UpdateUserUseCase } from './use-cases/update-user.use-case';
 import { DeleteUserUseCase } from './use-cases/delete-user.use-case';
+import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
 import { QueryUserDto } from './dtos/query-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { AvailableUser } from './repository/user-repository.interface';
@@ -18,7 +20,12 @@ export class UsersService {
     private readonly findAvailableUsersUseCase: FindAvailableUsersUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly deleteUserUseCase: DeleteUserUseCase,
+    private readonly createUserUseCase: CreateUserUseCase,
   ) {}
+
+  async create(dto: CreateUserDto, bearerToken: string): Promise<UserEntity> {
+    return this.createUserUseCase.execute(dto, bearerToken);
+  }
 
   async findAll(query: QueryUserDto): Promise<PaginatedResult<UserEntity>> {
     return this.findUsersUseCase.execute(query);
