@@ -40,12 +40,6 @@ export interface TrabajadorDetalle {
   telefono: string | null;
 }
 
-export interface EspecialidadSede {
-  uuid_especialidad: string;
-  nombre: string;
-  estado?: boolean;
-}
-
 export interface TipoDocumento {
   uuid_tipo_documento: string;
   nombre: string;
@@ -80,17 +74,6 @@ export class TrabajadoresCentralizadoService {
   ): Promise<TrabajadorDetalle> {
     const env = await this.http.get<CentralizadoEnvelope<TrabajadorDetalle>>(
       `/trabajadores/${usuarioUuid}`,
-      { bearerToken },
-    );
-    return env.data;
-  }
-
-  async getEspecialidadesSede(
-    sedeUuid: string,
-    bearerToken: string,
-  ): Promise<EspecialidadSede[]> {
-    const env = await this.http.get<CentralizadoEnvelope<EspecialidadSede[]>>(
-      `/asignar-sede/${sedeUuid}/especialidades`,
       { bearerToken },
     );
     return env.data;

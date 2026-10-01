@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -55,21 +55,5 @@ export class CentralizadoController {
   @ApiResponse({ status: 200, description: 'Lista de tipos de documento' })
   getTiposDocumento() {
     return this.centralizadoService.getTiposDocumento();
-  }
-
-  @Get('sedes/:sedeUuid/especialidades')
-  @Roles(Role.SUPER_ADMINISTRADOR)
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
-  @ApiOperation({
-    summary: 'Listar especialidades de una sede',
-    description: 'Especialidades asignadas a la sede en centralizado',
-  })
-  @ApiResponse({ status: 200, description: 'Lista de especialidades' })
-  getEspecialidadesSede(
-    @Param('sedeUuid') sedeUuid: string,
-    @Req() req: Request,
-  ) {
-    const token = req.headers.authorization?.split(' ')[1] ?? '';
-    return this.centralizadoService.getEspecialidadesSede(sedeUuid, token);
   }
 }

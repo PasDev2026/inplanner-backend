@@ -23,7 +23,7 @@ export class CreateUserUseCase {
       throw new BadRequestException('Las contraseñas no coinciden');
     }
 
-    const asignaciones = await this.resolveAsignaciones(dto, bearerToken);
+    const asignaciones = this.resolveAsignaciones(dto);
 
     const created = await this.trabajadores.createTrabajador(
       {
@@ -54,28 +54,14 @@ export class CreateUserUseCase {
     return (await this.userRepo.findByIdWithRelations(user.id_user)) ?? user;
   }
 
-  private async resolveAsignaciones(
+  private resolveAsignaciones(
     dto: CreateUserDto,
-    bearerToken: string,
-  ): Promise<CreateTrabajadorAsignacion[]> {
-    return Promise.all(
-      dto.asignaciones.map(async (asignacion) => {
-        const especialidades = await this.trabajadores.getEspecialidadesSede(
-          asignacion.sede_uuid,
-          bearerToken,
-        );
-        if (!especialidades || especialidades.length === 0) {
-          throw new BadRequestException(
-            'La sede seleccionada no tiene especialidades configuradas en centralizado; asigna una para poder crear el usuario',
-          );
-        }
-        return {
-          sede_uuid: asignacion.sede_uuid,
-          rol_uuid: asignacion.rol_uuid,
-          especialidad_uuids: [especialidades[0].uuid_especialidad],
-        };
-      }),
-    );
+  ): CreateTrabajadorAsignacion[] {
+    return dto.asignaciones.map((asignacion) => ({
+      sede_uuid: asignacion.sede_uuid,
+      rol_uuid: asignacion.rol_uuid,
+      especialidad_uuids: [],
+    }));
   }
 
   private async upsertLocalUser(

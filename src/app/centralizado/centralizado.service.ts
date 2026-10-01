@@ -25,8 +25,4 @@ export class CentralizadoService {
   getTiposDocumento() {
     return this.trabajadores.getTiposDocumento();
   }
-
-  getEspecialidadesSede(sedeUuid: string, bearerToken: string) {
-    return this.trabajadores.getEspecialidadesSede(sedeUuid, bearerToken);
-  }
 }
