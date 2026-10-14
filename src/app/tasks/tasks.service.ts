@@ -19,7 +19,6 @@ import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
 import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
 import { ImportTasksDto } from './dtos/import-tasks.dto';
 import { ImportPreviewDto } from './dtos/response/import-preview.dto';
-import { buildImportTemplateBuffer } from './lib/import-template';
 import { TaskResponseDto } from './dtos/response/task-response.dto';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 
@@ -120,6 +119,6 @@ export class TasksService {
   }
 
   getImportTemplate(): Promise<Buffer> {
-    return buildImportTemplateBuffer();
+    return this.importTasksUseCase.getTemplate();
   }
 }

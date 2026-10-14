@@ -8,6 +8,22 @@ export const ACTIVITY_HEADER_ALIASES = {
   name: ['tarea', 'nombre'],
   description: ['descripcion', 'detalle'],
   level: ['nivel'],
+  startDate: ['fecha inicio', 'inicio', 'fecha de inicio'],
+  dueDate: [
+    'fecha vencimiento',
+    'vencimiento',
+    'fecha fin',
+    'fin',
+    'fecha de vencimiento',
+  ],
+  responsible: ['responsable', 'responsables', 'asignado', 'asignados'],
+  responsible2: [
+    'responsable 2',
+    'responsable2',
+    'asignado 2',
+    'asignado2',
+    'responsable secundario',
+  ],
   status: ['estado'],
 } as const;
 
@@ -21,6 +37,9 @@ export interface ParsedActivityRow {
   task_name: string;
   task_description?: string;
   nivel: number;
+  start_date?: string; // YYYY-MM-DD
+  due_date?: string; // YYYY-MM-DD
+  responsables?: string[];
   estado: number;
 }
 
@@ -94,6 +113,66 @@ function parseStatus(raw: string): number | null {
   return STATUS_LABEL_TO_CODE.get(normalizeHeader(raw)) ?? null;
 }
 
+const pad = (n: string): string => n.padStart(2, '0');
+const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
+
+function excelSerialToIso(serial: number): string {
+  return new Date(EXCEL_EPOCH_UTC + serial * 86400000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * Construye YYYY-MM-DD validando rangos reales (mes 1-12, día válido para el mes).
+ * Devuelve null si la fecha no existe.
+ */
+function buildIso(year: number, month: number, day: number): string | null {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return `${year}-${pad(String(month))}-${pad(String(day))}`;
+}
+
+/**
+ * Normaliza una fecha a YYYY-MM-DD. Acepta ISO (2026-09-29), DD/MM/YYYY
+ * (LatAm), YYYY/MM/DD y el número serial de Excel. Devuelve null si no se
+ * puede interpretar ('' también devuelve null; el llamador lo trata como vacío).
+ */
+function parseDate(raw: string): string | null {
+  const value = raw.trim();
+  if (value === '') return null;
+
+  let m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return buildIso(Number(m[1]), Number(m[2]), Number(m[3]));
+
+  m = value.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (m) return buildIso(Number(m[1]), Number(m[2]), Number(m[3]));
+
+  m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return buildIso(Number(m[3]), Number(m[2]), Number(m[1]));
+
+  if (/^\d{4,5}(\.\d+)?$/.test(value)) {
+    const serial = Number(value);
+    if (serial >= 20000 && serial <= 80000) return excelSerialToIso(serial);
+  }
+  return null;
+}
+
+/** Divide una celda de responsables por coma/punto y coma. */
+function parseResponsibles(raw: string): string[] | undefined {
+  const tokens = raw
+    .split(/[,;]/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+  return tokens.length > 0 ? tokens : undefined;
+}
+
 function validateRow(row: RawRow): ImportRowError | null {
   const problemas: string[] = [];
   const name = pick(row.data, ACTIVITY_HEADER_ALIASES.name);
@@ -119,6 +198,16 @@ function validateRow(row: RawRow): ImportRowError | null {
     problemas.push(`Estado inválido: usa ${STATUS_RULE}`);
   }
 
+  const rawStart = pick(row.data, ACTIVITY_HEADER_ALIASES.startDate);
+  if (rawStart !== '' && parseDate(rawStart) === null) {
+    problemas.push('Fecha inicio inválida: usa AAAA-MM-DD o DD/MM/AAAA');
+  }
+
+  const rawDue = pick(row.data, ACTIVITY_HEADER_ALIASES.dueDate);
+  if (rawDue !== '' && parseDate(rawDue) === null) {
+    problemas.push('Fecha vencimiento inválida: usa AAAA-MM-DD o DD/MM/AAAA');
+  }
+
   if (problemas.length === 0) return null;
   return { numeroFila: row.numeroFila, mensaje: problemas.join('. ') };
 }
@@ -142,12 +231,24 @@ export function parseActivityRows(rows: RawRow[]): ParseActivitiesResult {
 
     const rawLevel = pick(row.data, ACTIVITY_HEADER_ALIASES.level);
     const rawStatus = pick(row.data, ACTIVITY_HEADER_ALIASES.status);
+    const rawStart = pick(row.data, ACTIVITY_HEADER_ALIASES.startDate);
+    const rawDue = pick(row.data, ACTIVITY_HEADER_ALIASES.dueDate);
+    const rawResponsible = pick(row.data, ACTIVITY_HEADER_ALIASES.responsible);
+    const rawResponsible2 = pick(
+      row.data,
+      ACTIVITY_HEADER_ALIASES.responsible2,
+    );
     const description = pick(row.data, ACTIVITY_HEADER_ALIASES.description);
     filas.push({
       numeroFila: row.numeroFila,
       task_name: pick(row.data, ACTIVITY_HEADER_ALIASES.name),
       task_description: description || undefined,
       nivel: rawLevel === '' ? 1 : Number.parseInt(rawLevel, 10),
+      start_date: parseDate(rawStart) ?? undefined,
+      due_date: parseDate(rawDue) ?? undefined,
+      responsables: parseResponsibles(
+        [rawResponsible, rawResponsible2].filter((v) => v !== '').join(', '),
+      ),
       estado: rawStatus === '' ? 0 : (parseStatus(rawStatus) ?? 0),
     });
   }
@@ -181,6 +282,7 @@ export function resolveHierarchy<T extends { nivel: number }>(
 
 function cellText(value: unknown): string {
   if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10); // YYYY-MM-DD
   if (typeof value === 'object') {
     const candidate = value as {
       richText?: { text: unknown }[];

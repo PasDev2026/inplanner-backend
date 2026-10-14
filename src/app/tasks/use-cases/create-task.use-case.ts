@@ -20,6 +20,7 @@ export class CreateTaskUseCase {
     dto: CreateTaskDto,
     createdById: string,
     manager?: EntityManager,
+    options?: { assignCreator?: boolean },
   ): Promise<TaskEntity> {
     const task = new TaskEntity();
     Object.assign(task, dto, {
@@ -43,19 +44,22 @@ export class CreateTaskUseCase {
         ? await this.taskRepo.save(task, manager)
         : await this.taskRepo.save(task);
 
-    if (manager !== undefined) {
-      await this.assignmentRepo.create(
-        {
+    const assignCreator = options?.assignCreator ?? true;
+    if (assignCreator) {
+      if (manager !== undefined) {
+        await this.assignmentRepo.create(
+          {
+            task_id: saved.id_task,
+            user_id: createdById,
+          },
+          manager,
+        );
+      } else {
+        await this.assignmentRepo.create({
           task_id: saved.id_task,
           user_id: createdById,
-        },
-        manager,
-      );
-    } else {
-      await this.assignmentRepo.create({
-        task_id: saved.id_task,
-        user_id: createdById,
-      });
+        });
+      }
     }
 
     return saved;

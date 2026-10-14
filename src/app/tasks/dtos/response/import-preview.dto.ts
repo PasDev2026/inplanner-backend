@@ -7,6 +7,9 @@ export class ImportPreviewRowDto {
   numeroFila: number;
   task_name: string;
   nivel: number;
+  start_date?: string;
+  due_date?: string;
+  responsables?: string[];
   estado: number;
 }
 
@@ -29,6 +32,9 @@ export class ImportPreviewDto {
       numeroFila: fila.numeroFila,
       task_name: fila.task_name,
       nivel: nivelesEfectivos[index] ?? fila.nivel,
+      start_date: fila.start_date,
+      due_date: fila.due_date,
+      responsables: fila.responsables,
       estado: fila.estado,
     }));
     dto.total = dto.validas + dto.ignoradas + dto.errores.length;

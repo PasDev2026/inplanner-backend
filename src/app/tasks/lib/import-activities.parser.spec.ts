@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import {
   ParsedActivityRow,
   parseActivitiesWorkbook,
@@ -87,6 +88,81 @@ describe('parseActivityRows', () => {
       },
     ]);
   });
+
+  it('parsea fechas (ISO y DD/MM/AAAA) y reporta fechas inválidas', () => {
+    const result = parseActivityRows([
+      row(2, {
+        tarea: 'Con fechas ISO',
+        nivel: '1',
+        'fecha inicio': '2026-09-29',
+        'fecha vencimiento': '2026-10-15',
+      }),
+      row(3, { tarea: 'Con fecha LatAm', 'fecha inicio': '29/09/2026' }),
+      row(4, { tarea: 'Fecha mala', 'fecha inicio': '32/13/2026' }),
+    ]);
+
+    expect(result.filas).toEqual([
+      {
+        numeroFila: 2,
+        task_name: 'Con fechas ISO',
+        task_description: undefined,
+        nivel: 1,
+        start_date: '2026-09-29',
+        due_date: '2026-10-15',
+        estado: 0,
+      },
+      {
+        numeroFila: 3,
+        task_name: 'Con fecha LatAm',
+        task_description: undefined,
+        nivel: 1,
+        start_date: '2026-09-29',
+        due_date: undefined,
+        estado: 0,
+      },
+    ]);
+    expect(result.errores).toEqual([
+      {
+        numeroFila: 4,
+        mensaje: 'Fecha inicio inválida: usa AAAA-MM-DD o DD/MM/AAAA',
+      },
+    ]);
+  });
+
+  it('parsea responsables (varios separados por coma o punto y coma)', () => {
+    const result = parseActivityRows([
+      row(2, { tarea: 'Con uno', responsable: 'Juan Pérez' }),
+      row(3, {
+        tarea: 'Con varios',
+        responsables: 'Ana López, Luis Gómez; Pedro Díaz',
+      }),
+      row(4, { tarea: 'Sin responsable' }),
+    ]);
+
+    expect(result.errores).toEqual([]);
+    expect(result.filas[0].responsables).toEqual(['Juan Pérez']);
+    expect(result.filas[1].responsables).toEqual([
+      'Ana López',
+      'Luis Gómez',
+      'Pedro Díaz',
+    ]);
+    expect(result.filas[2].responsables).toBeUndefined();
+  });
+
+  it('une Responsable y Responsable 2', () => {
+    const result = parseActivityRows([
+      row(2, {
+        tarea: 'Con dos',
+        responsable: 'Ana López',
+        'responsable 2': 'Luis Gómez',
+      }),
+      row(3, { tarea: 'Solo el segundo', 'responsable 2': 'Pedro Díaz' }),
+    ]);
+
+    expect(result.errores).toEqual([]);
+    expect(result.filas[0].responsables).toEqual(['Ana López', 'Luis Gómez']);
+    expect(result.filas[1].responsables).toEqual(['Pedro Díaz']);
+  });
 });
 
 describe('resolveHierarchy', () => {
@@ -170,5 +246,61 @@ describe('parseActivitiesWorkbook', () => {
 
     expect(result.filas).toEqual([]);
     expect(result.errores[0].numeroFila).toBe(1);
+  });
+
+  it('lee fechas desde CSV', async () => {
+    const csv = [
+      'Tarea;Nivel;Fecha inicio;Fecha vencimiento;Estado',
+      'Con fechas;1;2026-09-29;2026-10-15;En progreso',
+    ].join('\n');
+
+    const result = await parseActivitiesWorkbook(
+      Buffer.from(csv, 'utf8'),
+      'actividades.csv',
+    );
+
+    expect(result.errores).toEqual([]);
+    expect(result.filas[0]).toEqual({
+      numeroFila: 2,
+      task_name: 'Con fechas',
+      task_description: undefined,
+      nivel: 1,
+      start_date: '2026-09-29',
+      due_date: '2026-10-15',
+      estado: 2,
+    });
+  });
+
+  it('lee celdas de fecha reales (tipo Date) de un xlsx', async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Actividades');
+    ws.addRow([
+      'Tarea',
+      'Nivel',
+      'Fecha inicio',
+      'Fecha vencimiento',
+      'Estado',
+    ]);
+    ws.addRow([
+      'Con fecha',
+      1,
+      new Date(Date.UTC(2026, 8, 29)),
+      new Date(Date.UTC(2026, 9, 15)),
+      'Pendiente',
+    ]);
+    const buffer = (await wb.xlsx.writeBuffer()) as unknown as Buffer;
+
+    const result = await parseActivitiesWorkbook(buffer, 'actividades.xlsx');
+
+    expect(result.errores).toEqual([]);
+    expect(result.filas[0]).toEqual({
+      numeroFila: 2,
+      task_name: 'Con fecha',
+      task_description: undefined,
+      nivel: 1,
+      start_date: '2026-09-29',
+      due_date: '2026-10-15',
+      estado: 0,
+    });
   });
 });
