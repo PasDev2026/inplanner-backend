@@ -2,6 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import {
   ClassSerializerInterceptor,
   Logger,
+  RequestMethod,
   ValidationPipe,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -11,6 +12,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { OAUTH_PATHS } from './app/mcp/oauth/constants/oauth.constants';
 import { JsonLogger } from './common/logger/json-logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -29,13 +31,24 @@ async function bootstrap() {
     `[TIMER] NestFactory.create (TypeORM + modules + DB): ${Date.now() - startTime}ms`,
   );
   app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true }));
   app.useLogger(new JsonLogger());
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());
   app.use(cookieParser());
 
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      { path: OAUTH_PATHS.protectedResource, method: RequestMethod.GET },
+      { path: OAUTH_PATHS.protectedResourceMcp, method: RequestMethod.GET },
+      { path: OAUTH_PATHS.authServerMetadata, method: RequestMethod.GET },
+      { path: OAUTH_PATHS.register, method: RequestMethod.POST },
+      { path: OAUTH_PATHS.authorize, method: RequestMethod.GET },
+      { path: OAUTH_PATHS.authorize, method: RequestMethod.POST },
+      { path: OAUTH_PATHS.token, method: RequestMethod.POST },
+    ],
+  });
 
   const configService = app.get(ConfigService);
   app.enableCors({

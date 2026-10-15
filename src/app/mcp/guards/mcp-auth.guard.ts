@@ -5,39 +5,67 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
+import type { Request, Response } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import {
   MCP_TOKEN_ENV_KEY,
   MCP_TOKEN_QUERY_PARAM,
 } from '../constants/mcp.constants';
+import { OAuthConfigService } from '../oauth/oauth-config.service';
+import { VerifyAccessTokenUseCase } from '../oauth/use-cases/verify-access-token.use-case';
 
 /**
- * Autentica las peticiones al endpoint MCP mediante un token dedicado
- * (`MCP_AUTH_TOKEN`), aceptado de dos formas:
- *  - `Authorization: Bearer <token>` (Claude Code, OpenCode, etc.)
- *  - `?token=<token>` en la URL (conector remoto de Claude, cuya UI
- *    solo admite la URL).
+ * Autentica las peticiones al endpoint MCP. Acepta:
+ *  1. El token de servicio (`MCP_AUTH_TOKEN`), por header `Authorization: Bearer`
+ *     o por query `?token=` (OpenCode, Claude Code, conector con token en URL).
+ *  2. Un **access token OAuth** válido emitido por el servidor OAuth del MCP
+ *     (conector de Claude sin token en la URL).
  *
- * Es intencionalmente independiente del `AuthGuard` global (que valida JWT
- * de la aplicación): el MCP se autentica con un token de servicio.
+ * Es intencionalmente independiente del `AuthGuard` global (JWT de la app).
  */
 @Injectable()
 export class McpAuthGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly oauthConfig: OAuthConfigService,
+    private readonly verifyAccessToken: VerifyAccessTokenUseCase,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const expectedToken = this.configService.get<string>(MCP_TOKEN_ENV_KEY);
     const providedToken = this.extractToken(request);
 
-    if (!expectedToken || !providedToken) {
-      throw new UnauthorizedException('Token MCP inválido o ausente');
+    // 1) Token de servicio
+    if (
+      expectedToken &&
+      providedToken &&
+      this.safeEqual(providedToken, expectedToken)
+    ) {
+      return true;
     }
-    if (!this.safeEqual(providedToken, expectedToken)) {
-      throw new UnauthorizedException('Token MCP inválido o ausente');
+
+    // 2) Access token OAuth
+    if (providedToken && this.oauthConfig.isConfigured()) {
+      const valid = await this.verifyAccessToken.execute(
+        providedToken,
+        this.oauthConfig.resourceFor(request),
+      );
+      if (valid) return true;
     }
-    return true;
+
+    this.setChallenge(context, request);
+    throw new UnauthorizedException('Token MCP inválido o ausente');
+  }
+
+  /** RFC 9728: indica al cliente dónde descubrir el servidor de autorización. */
+  private setChallenge(context: ExecutionContext, request: Request): void {
+    if (!this.oauthConfig.isConfigured()) return;
+    const response = context.switchToHttp().getResponse<Response>();
+    response.setHeader(
+      'WWW-Authenticate',
+      `Bearer resource_metadata="${this.oauthConfig.resourceMetadataUrl(request)}"`,
+    );
   }
 
   /**

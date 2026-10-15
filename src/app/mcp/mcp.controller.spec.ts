@@ -13,6 +13,8 @@ import { McpAuthGuard } from './guards/mcp-auth.guard';
 import { McpAuditService } from './audit/mcp-audit.service';
 import { McpController } from './mcp.controller';
 import { McpServerFactory } from './mcp-server.factory';
+import { OAuthConfigService } from './oauth/oauth-config.service';
+import { VerifyAccessTokenUseCase } from './oauth/use-cases/verify-access-token.use-case';
 import { MCP_REPOSITORY } from './repository/mcp-repository.interface';
 import { ExportDatasetUseCase } from './use-cases/export-dataset.use-case';
 import { GetAreaDetailUseCase } from './use-cases/get-area-detail.use-case';
@@ -265,6 +267,19 @@ describe('McpController (F0 + F1 + F2)', () => {
         GetUserLoadUseCase,
         GetOverdueTasksUseCase,
         { provide: ExportDatasetUseCase, useValue: exportDataset },
+        {
+          provide: OAuthConfigService,
+          useValue: {
+            isConfigured: () => false,
+            resourceFor: () => 'http://localhost/api/v1/mcp',
+            resourceMetadataUrl: () =>
+              'http://localhost/.well-known/oauth-protected-resource',
+          },
+        },
+        {
+          provide: VerifyAccessTokenUseCase,
+          useValue: { execute: () => Promise.resolve(false) },
+        },
         { provide: MCP_REPOSITORY, useValue: mcpRepository },
         { provide: ProjectsService, useValue: projectsService },
         { provide: TasksService, useValue: tasksService },

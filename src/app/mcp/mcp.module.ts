@@ -8,6 +8,7 @@ import { McpController } from './mcp.controller';
 import { McpServerFactory } from './mcp-server.factory';
 import { McpAuthGuard } from './guards/mcp-auth.guard';
 import { McpAuditService } from './audit/mcp-audit.service';
+import { McpOAuthModule } from './oauth/oauth.module';
 import { MCP_REPOSITORY } from './repository/mcp-repository.interface';
 import { McpTypeormRepository } from './persistence/mcp.typeorm.repository';
 import { ExportDatasetUseCase } from './use-cases/export-dataset.use-case';
@@ -27,7 +28,14 @@ import { GetUserLoadUseCase } from './use-cases/get-user-load.use-case';
  * `McpTypeormRepository`.
  */
 @Module({
-  imports: [ProjectsModule, TasksModule, UsersModule, AreasModule, NotesModule],
+  imports: [
+    ProjectsModule,
+    TasksModule,
+    UsersModule,
+    AreasModule,
+    NotesModule,
+    McpOAuthModule,
+  ],
   controllers: [McpController],
   providers: [
     { provide: MCP_REPOSITORY, useClass: McpTypeormRepository },

@@ -24,6 +24,11 @@ const envSchema = z
     // Si no está definido, el servidor MCP rechaza todas las peticiones.
     MCP_AUTH_TOKEN: z.string().min(1).optional(),
 
+    // MCP OAuth (opcional): contraseña para aprobar el consentimiento OAuth.
+    MCP_OAUTH_ADMIN_PASSWORD: z.string().min(1).optional(),
+    // MCP OAuth (opcional): URL pública para forzar el issuer detrás de proxies.
+    MCP_PUBLIC_URL: z.string().url().optional(),
+
     // AWS S3
     AWS_REGION: z.string().min(1),
     AWS_ACCESS_KEY_ID: z.string().min(1),
