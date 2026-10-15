@@ -24,6 +24,6 @@ import { AttachmentsModule } from '../attachments/attachments.module';
     DeleteNoteUseCase,
     NotesService,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, NotesService],
 })
 export class NotesModule {}

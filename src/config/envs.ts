@@ -20,6 +20,10 @@ const envSchema = z
     JWT_PUBLIC_KEY_PATH: z.string().default('./keys/jwt-public.key'),
     ATTACHMENT_SIG_SECRET: z.string().min(32),
 
+    // MCP (opcional): token de servicio para autenticar el endpoint /mcp.
+    // Si no está definido, el servidor MCP rechaza todas las peticiones.
+    MCP_AUTH_TOKEN: z.string().min(1).optional(),
+
     // AWS S3
     AWS_REGION: z.string().min(1),
     AWS_ACCESS_KEY_ID: z.string().min(1),

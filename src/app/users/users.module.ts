@@ -26,6 +26,6 @@ import { CentralizadoModule } from '../centralizado/centralizado.module';
     CreateUserUseCase,
     UsersService,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, UsersService],
 })
 export class UsersModule {}

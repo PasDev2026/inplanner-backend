@@ -49,6 +49,7 @@ import { TasksService } from './tasks.service';
     CreateTaskUseCase,
     TASK_REPOSITORY,
     TASK_ASSIGNMENT_REPOSITORY,
+    TasksService,
   ],
 })
 export class TasksModule {}

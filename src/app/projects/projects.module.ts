@@ -40,6 +40,6 @@ import { ProjectsService } from './projects.service';
     ReorderProjectsUseCase,
     ProjectsService,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ProjectsService],
 })
 export class ProjectsModule {}

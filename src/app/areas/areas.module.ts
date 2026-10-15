@@ -23,6 +23,6 @@ import { AreasService } from './areas.service';
     DeleteAreaUseCase,
     AreasService,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, AreasService],
 })
 export class AreasModule {}

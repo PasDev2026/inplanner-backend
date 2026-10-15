@@ -20,6 +20,7 @@ import { AuthModule } from './app/auth/auth.module';
 import { SocketModule } from './modules/socket/socket.module';
 import { DashboardModule } from './app/dashboard/dashboard.module';
 import { ReportsModule } from './app/reports/reports.module';
+import { McpModule } from './app/mcp/mcp.module';
 import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { UserEntity } from './app/users/entities/user.entity';
@@ -69,6 +70,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     SocketModule,
     DashboardModule,
     ReportsModule,
+    McpModule,
   ],
   providers: [
     {
