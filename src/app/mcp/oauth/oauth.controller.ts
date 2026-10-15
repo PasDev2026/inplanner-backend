@@ -19,7 +19,11 @@ import type {
   TokenResponse,
   ValidatedAuthorize,
 } from './interfaces/oauth.interface';
-import { renderConsentPage, renderErrorPage } from './lib/consent-page';
+import {
+  buildConsentCsp,
+  renderConsentPage,
+  renderErrorPage,
+} from './lib/consent-page';
 import {
   buildAuthorizationServerMetadata,
   buildProtectedResourceMetadata,
@@ -135,6 +139,7 @@ export class McpOAuthController {
     if ('error' in validated) {
       return this.renderError(res, 400, validated.error);
     }
+    this.applyConsentCsp(res, validated.redirectUri);
     res.type('html').send(this.renderConsent(validated, query, false));
   }
 
@@ -152,6 +157,7 @@ export class McpOAuthController {
     if ('error' in validated) {
       return this.renderError(res, 400, validated.error);
     }
+    this.applyConsentCsp(res, validated.redirectUri);
     if (!this.config.checkAdminPassword(body.password ?? '')) {
       res
         .status(401)
@@ -261,6 +267,13 @@ export class McpOAuthController {
         resource: params.resource ?? '',
       },
       showError,
+    );
+  }
+
+  private applyConsentCsp(res: Response, redirectUri: string): void {
+    res.setHeader(
+      'Content-Security-Policy',
+      buildConsentCsp(new URL(redirectUri).origin),
     );
   }
 

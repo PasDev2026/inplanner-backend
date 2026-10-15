@@ -1,5 +1,28 @@
 import { OAUTH_PATHS } from '../constants/oauth.constants';
 
+/**
+ * CSP para la página de consentimiento.
+ *
+ * `form-action` debe incluir el origen del `redirect_uri`: al enviar el
+ * formulario, el navegador sigue el 302 hacia el cliente y lo bloquea si el
+ * origen no está permitido (`form-action 'self'` sola rompe el flujo OAuth).
+ */
+export function buildConsentCsp(redirectOrigin: string): string {
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "font-src 'self' https: data:",
+    `form-action 'self' ${redirectOrigin}`,
+    "frame-ancestors 'self'",
+    "img-src 'self' data:",
+    "object-src 'none'",
+    "script-src 'self'",
+    "script-src-attr 'none'",
+    "style-src 'self' https: 'unsafe-inline'",
+    'upgrade-insecure-requests',
+  ].join('; ');
+}
+
 /** Escapa texto para insertarlo de forma segura en HTML. */
 export function escapeHtml(value: string): string {
   return value
