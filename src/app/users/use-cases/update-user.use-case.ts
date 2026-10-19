@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
 import type { IUsersRepository } from '../repository/user-repository.interface';
 import { USERS_REPOSITORY } from '../repository/user-repository.interface';
 import { UserEntity } from '../entities/user.entity';
@@ -30,6 +35,13 @@ export class UpdateUserUseCase {
     const isBeingDeactivated = dto.estado === false && wasActive;
 
     if (dto.asignaciones?.length) {
+      const sedeIds = dto.asignaciones.map(
+        (asignacion) => asignacion.sede_uuid,
+      );
+      if (new Set(sedeIds).size !== sedeIds.length) {
+        throw new BadRequestException('Cada sede solo puede tener un rol');
+      }
+
       await this.trabajadores.updateTrabajador(
         id,
         dto.asignaciones.map((asignacion) => ({
