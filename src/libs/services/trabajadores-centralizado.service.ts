@@ -29,6 +29,16 @@ export interface CreateTrabajadorResult {
   usuario_uuid: string;
 }
 
+export interface TrabajadorSedeDetalle {
+  sede_uuid: string;
+  usuario_sede_uuid: string;
+  sede_nombre: string;
+  sede_slug: string | null;
+  pais_codigo: string | null;
+  roles: string[];
+  especialidades: { uuid_especialidad: string; nombre: string }[];
+}
+
 export interface TrabajadorDetalle {
   usuario_uuid: string;
   persona_uuid: string;
@@ -38,6 +48,7 @@ export interface TrabajadorDetalle {
   apellido_materno: string | null;
   email: string | null;
   telefono: string | null;
+  sedes: TrabajadorSedeDetalle[];
 }
 
 export interface TipoDocumento {
@@ -76,6 +87,18 @@ export class TrabajadoresCentralizadoService {
       `/trabajadores/${usuarioUuid}`,
       { bearerToken },
     );
+    return env.data;
+  }
+
+  async updateTrabajador(
+    usuarioUuid: string,
+    asignaciones: CreateTrabajadorAsignacion[],
+    bearerToken: string,
+  ): Promise<{ mensaje: string }> {
+    const env = await this.http.patch<
+      { asignaciones: CreateTrabajadorAsignacion[] },
+      CentralizadoEnvelope<{ mensaje: string }>
+    >(`/trabajadores/${usuarioUuid}`, { asignaciones }, { bearerToken });
     return env.data;
   }
 

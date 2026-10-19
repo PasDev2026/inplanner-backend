@@ -105,8 +105,13 @@ export class UsersController {
     status: 403,
     description: 'No tiene permisos para esta acción',
   })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization?.split(' ')[1] ?? '';
+    return this.usersService.update(id, dto, token);
   }
 
   @Delete(':id')

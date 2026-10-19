@@ -5,6 +5,7 @@ import { UserEntity } from '../entities/user.entity';
 import { AreaEntity } from '../../areas/entities/area.entity';
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { SocketService } from '../../../modules/socket/socket.service';
+import { TrabajadoresCentralizadoService } from '../../../libs/services/trabajadores-centralizado.service';
 
 @Injectable()
 export class UpdateUserUseCase {
@@ -12,9 +13,14 @@ export class UpdateUserUseCase {
     @Inject(USERS_REPOSITORY)
     private readonly userRepo: IUsersRepository,
     private readonly socketService: SocketService,
+    private readonly trabajadores: TrabajadoresCentralizadoService,
   ) {}
 
-  async execute(id: string, dto: UpdateUserDto): Promise<UserEntity> {
+  async execute(
+    id: string,
+    dto: UpdateUserDto,
+    bearerToken = '',
+  ): Promise<UserEntity> {
     const user = await this.userRepo.findByIdWithRelations(id);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -22,6 +28,19 @@ export class UpdateUserUseCase {
 
     const wasActive = user.estado;
     const isBeingDeactivated = dto.estado === false && wasActive;
+
+    if (dto.asignaciones?.length) {
+      await this.trabajadores.updateTrabajador(
+        id,
+        dto.asignaciones.map((asignacion) => ({
+          sede_uuid: asignacion.sede_uuid,
+          rol_uuid: asignacion.rol_uuid,
+          especialidad_uuids: asignacion.especialidad_uuids ?? [],
+        })),
+        bearerToken,
+      );
+      user.sede_id = dto.asignaciones[0].sede_uuid;
+    }
 
     if (dto.area_id !== undefined) {
       const areaRef = new AreaEntity();

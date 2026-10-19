@@ -39,8 +39,12 @@ export class UsersService {
     return this.findUserUseCase.execute(id);
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserEntity> {
-    return this.updateUserUseCase.execute(id, dto);
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    bearerToken: string,
+  ): Promise<UserEntity> {
+    return this.updateUserUseCase.execute(id, dto, bearerToken);
   }
 
   async remove(id: string): Promise<void> {

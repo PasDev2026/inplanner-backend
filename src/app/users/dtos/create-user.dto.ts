@@ -24,6 +24,16 @@ export class CreateUserAssignmentDto {
   @ApiProperty({ example: 'uuid-del-rol' })
   @IsUUID()
   rol_uuid: string;
+
+  @ApiProperty({
+    example: ['uuid-especialidad'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  especialidad_uuids?: string[];
 }
 
 export class CreateUserDto {

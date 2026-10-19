@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -29,6 +36,23 @@ export class CentralizadoController {
   findAll(@Req() req: Request) {
     const token = req.headers.authorization?.split(' ')[1] ?? '';
     return this.centralizadoService.findAll(token);
+  }
+
+  @Get('trabajadores/:uuid')
+  @Roles(Role.SUPER_ADMINISTRADOR, Role.JEFATURA)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Obtener sedes y roles de un trabajador',
+    description:
+      'Devuelve las asignaciones actuales del trabajador desde la base centralizada',
+  })
+  @ApiResponse({ status: 200, description: 'Asignaciones del trabajador' })
+  getAsignaciones(
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization?.split(' ')[1] ?? '';
+    return this.centralizadoService.getAsignaciones(uuid, token);
   }
 
   @Get('sunat/dni')

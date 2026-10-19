@@ -32,7 +32,7 @@ export class CentralizadoApiService {
     );
     return env.data
       .filter((r) => r.estado)
-      .map((r) => ({ id: r.uuid_rol, nombre: r.nombre }));
+      .map((r) => ({ id: r.uuid_rol, nombre: r.nombre, codigo: r.codigo }));
   }
 
   async getSedes(bearerToken: string) {
