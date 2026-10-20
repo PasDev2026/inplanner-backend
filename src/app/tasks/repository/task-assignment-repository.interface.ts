@@ -16,5 +16,10 @@ export interface ITaskAssignmentRepository {
     manager?: EntityManager,
   ): Promise<TaskAssignmentEntity>;
   findByTaskId(taskId: number): Promise<TaskAssignmentEntity[]>;
+  replaceForTask(
+    taskId: number,
+    userIds: string[],
+    manager?: EntityManager,
+  ): Promise<void>;
   delete(assignment: TaskAssignmentEntity): Promise<void>;
 }

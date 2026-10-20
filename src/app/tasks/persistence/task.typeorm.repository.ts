@@ -98,8 +98,20 @@ export class TaskTypeormRepository implements ITaskRepository {
     return task;
   }
 
-  async update(id: number, partial: Partial<TaskEntity>): Promise<void> {
-    await this.repo.update(id, partial);
+  async findByProjectWithAssignments(projectId: number): Promise<TaskEntity[]> {
+    return this.repo.find({
+      where: { project_id: projectId },
+      relations: { assignments: { user: true } },
+      order: { position: 'ASC', created_at: 'ASC' },
+    });
+  }
+
+  async update(
+    id: number,
+    partial: Partial<TaskEntity>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.scopedRepo(manager).update(id, partial);
   }
 
   async delete(task: TaskEntity): Promise<void> {

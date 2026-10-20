@@ -85,7 +85,9 @@ export class TasksController {
     summary: 'Importar actividades',
     description:
       'Crea tareas y subtareas desde un archivo Excel (.xlsx) o CSV. ' +
-      'Columnas: Tarea, Descripcion, Nivel, Estado. Devuelve las tareas creadas.',
+      'Columnas: Tarea, Descripcion, Nivel, Fecha inicio, Fecha vencimiento, Estado, Responsable, Responsable 2, ID. ' +
+      'Las filas con ID existente se omiten si no cambiaron y se actualizan si cambiaron. ' +
+      'Devuelve el resumen de creadas, actualizadas y omitidas.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -103,7 +105,10 @@ export class TasksController {
       required: ['project_id', 'file'],
     },
   })
-  @ApiResponse({ status: 201, description: 'Tareas creadas desde el archivo' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resumen de tareas creadas, actualizadas y omitidas',
+  })
   @ApiResponse({
     status: 400,
     description: 'Archivo inválido o sin actividades',

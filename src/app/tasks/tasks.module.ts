@@ -18,6 +18,7 @@ import { RemoveAssignmentUseCase } from './use-cases/remove-assignment.use-case'
 import { FindChildrenUseCase } from './use-cases/find-children.use-case';
 import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
 import { ImportTasksUseCase } from './use-cases/import-tasks.use-case';
+import { ExportProjectTasksUseCase } from './use-cases/export-project-tasks.use-case';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 
@@ -42,6 +43,7 @@ import { TasksService } from './tasks.service';
     FindChildrenUseCase,
     ReorderTasksUseCase,
     ImportTasksUseCase,
+    ExportProjectTasksUseCase,
     TasksService,
   ],
   exports: [

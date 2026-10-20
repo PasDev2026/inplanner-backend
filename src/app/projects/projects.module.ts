@@ -17,10 +17,12 @@ import { RemoveResponsibleUseCase } from './use-cases/remove-responsible.use-cas
 import { ReorderProjectsUseCase } from './use-cases/reorder-projects.use-case';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
+import { TasksModule } from '../tasks/tasks.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProjectEntity, ProjectResponsibleEntity]),
+    TasksModule,
   ],
   controllers: [ProjectsController],
   providers: [

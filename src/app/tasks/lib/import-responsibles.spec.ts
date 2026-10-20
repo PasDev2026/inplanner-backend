@@ -113,19 +113,69 @@ describe('buildResponsibleResolver', () => {
     expect(errors[0]).toContain('Responsable no encontrado: Javier Garcia');
     expect(errors[0]).toContain('Javier Enrique García');
   });
+
+  it('resuelve el nombre desambiguado con documento', () => {
+    const withDuplicateNames = buildResponsibleResolver([
+      {
+        id_user: 'u1',
+        name: 'Ana',
+        apellido_paterno: 'López',
+        apellido_materno: 'Ruiz',
+        numero_documento: '11111111',
+      },
+      {
+        id_user: 'u2',
+        name: 'Ana',
+        apellido_paterno: 'López',
+        apellido_materno: 'Ruiz',
+        numero_documento: '22222222',
+      },
+    ]);
+
+    expect(withDuplicateNames.resolve('Ana López Ruiz (11111111)')).toEqual({
+      ids: ['u1'],
+      errors: [],
+    });
+  });
 });
 
 describe('listResponsibleNames', () => {
-  it('devuelve nombres únicos, ordenados y sin ambiguos', () => {
+  it('devuelve nombres completos, únicos y ordenados', () => {
     const names = listResponsibleNames(USERS);
 
-    expect(names).toContain('Ana López');
+    expect(names).toContain('Ana López Ruiz');
     expect(names).toContain('Pedro');
     expect(names).toContain('Javier Enrique García');
-    // "Juan Pérez" es ambiguo (u3/u4) -> se excluye.
+    expect(names).toContain('Juan Pérez Díaz');
+    expect(names).toContain('Juan Pérez Soto');
+    // El nombre corto ambiguo no se ofrece en el desplegable.
     expect(names).not.toContain('Juan Pérez');
 
     const sorted = [...names].sort((a, b) => a.localeCompare(b, 'es'));
     expect(names).toEqual(sorted);
+  });
+
+  it('desambigua con el documento cuando el nombre completo se repite', () => {
+    const names = listResponsibleNames([
+      {
+        id_user: 'u1',
+        name: 'Ana',
+        apellido_paterno: 'López',
+        apellido_materno: 'Ruiz',
+        numero_documento: '11111111',
+      },
+      {
+        id_user: 'u2',
+        name: 'Ana',
+        apellido_paterno: 'López',
+        apellido_materno: 'Ruiz',
+        numero_documento: '22222222',
+      },
+    ]);
+
+    expect(names).toEqual([
+      'Ana López Ruiz (11111111)',
+      'Ana López Ruiz (22222222)',
+    ]);
   });
 });

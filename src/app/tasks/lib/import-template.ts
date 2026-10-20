@@ -4,8 +4,8 @@ import { TASK_STATUS_LABELS } from '../../reports/constants/report.constants';
 export const IMPORT_SHEET_NAME = 'Actividades';
 export const IMPORT_INSTRUCTIONS_SHEET_NAME = 'Instrucciones';
 export const IMPORT_USERS_SHEET_NAME = 'Usuarios';
-export const IMPORT_TEMPLATE_MAX_ROWS = 500;
-export const IMPORT_TEMPLATE_MAX_BYTES = 2 * 1024 * 1024;
+export const IMPORT_TEMPLATE_MAX_ROWS = 1000;
+export const IMPORT_TEMPLATE_MAX_BYTES = 5 * 1024 * 1024;
 
 export const IMPORT_TEMPLATE_HEADERS = {
   name: 'Tarea',
@@ -16,7 +16,132 @@ export const IMPORT_TEMPLATE_HEADERS = {
   status: 'Estado',
   responsible: 'Responsable',
   responsible2: 'Responsable 2',
+  id: 'ID',
 } as const;
+
+export interface ImportTemplateRow {
+  /** ID de la tarea existente. Vacío/undefined = tarea nueva. */
+  id?: number;
+  name: string;
+  description?: string;
+  level: number;
+  startDate?: string;
+  dueDate?: string;
+  status: number;
+  responsible?: string;
+  responsible2?: string;
+}
+
+const SAMPLE_ROWS: ImportTemplateRow[] = [
+  {
+    name: 'Planificación del día',
+    description: 'Revisar pendientes y priorizar actividades',
+    level: 1,
+    startDate: '2026-09-29',
+    dueDate: '2026-09-29',
+    status: 4,
+  },
+  {
+    name: 'Revisar correos',
+    description: 'Responder mensajes pendientes',
+    level: 2,
+    startDate: '2026-09-29',
+    dueDate: '2026-09-29',
+    status: 4,
+  },
+  {
+    name: 'Reunión de equipo',
+    description: 'Daily de avance de proyectos',
+    level: 2,
+    startDate: '2026-09-29',
+    dueDate: '2026-09-29',
+    status: 2,
+  },
+  {
+    name: 'Desarrollo Inplanner',
+    description: 'Avances de backend y frontend',
+    level: 1,
+    startDate: '2026-09-29',
+    dueDate: '2026-10-15',
+    status: 2,
+  },
+  {
+    name: 'Endpoint de importación',
+    description: 'Crear POST /tasks/import',
+    level: 2,
+    startDate: '2026-09-30',
+    dueDate: '2026-10-10',
+    status: 0,
+  },
+  {
+    name: 'Parser Excel/CSV',
+    description: 'Leer la plantilla y validar columnas',
+    level: 3,
+    startDate: '2026-09-30',
+    dueDate: '2026-10-05',
+    status: 1,
+  },
+  {
+    name: 'Pruebas del parser',
+    description: 'Casos: plano, anidado y vacío',
+    level: 3,
+    startDate: '2026-09-30',
+    dueDate: '2026-10-03',
+    status: 0,
+  },
+  {
+    name: 'Documentación',
+    description: 'Actualizar el README del módulo',
+    level: 1,
+    startDate: '2026-10-01',
+    dueDate: '2026-10-08',
+    status: 3,
+  },
+];
+
+const INSTRUCTIONS: [string, string][] = [
+  [
+    'Encabezados',
+    'Deben ir en la fila 1 de la hoja "Actividades": Tarea, Descripcion, Nivel, Fecha inicio, Fecha vencimiento, Estado, Responsable, Responsable 2, ID',
+  ],
+  ['Filas vacías', 'Se ignoran automáticamente'],
+  [
+    'Nivel',
+    '1 = actividad, 2 = subtarea, 3 = sub-subtarea. Puedes anidar a más profundidad (4, 5, ...). Vacío = 1',
+  ],
+  [
+    'Fecha inicio',
+    'Formato AAAA-MM-DD (ej. 2026-09-29). También acepta DD/MM/AAAA. Vacío = hoy al crear',
+  ],
+  [
+    'Fecha vencimiento',
+    'Formato AAAA-MM-DD (ej. 2026-10-15). También acepta DD/MM/AAAA. Opcional',
+  ],
+  ['Estado', 'Nombre o número (ver glosario). Vacío = Pendiente'],
+  [
+    'Responsable / Responsable 2',
+    'Elige de la lista (nombre y apellidos). Debe existir en el sistema. Vacío = se asigna a quien importa',
+  ],
+  ['Nombres', 'El campo Tarea admite hasta 150 caracteres'],
+  ['Columnas extra', 'Se ignoran'],
+  [
+    'Columna ID',
+    'Las filas exportadas desde un proyecto traen el ID de la tarea. Déjalo vacío para crear una tarea nueva y no copies el ID en filas nuevas. No borres esta columna: es lo que permite actualizar u omitir sin duplicar.',
+  ],
+  [
+    'Filas existentes',
+    'Si la fila no cambió se omite. Si cambió algún dato (tarea, descripción, fechas, estado, nivel o responsables) se actualiza.',
+  ],
+  [
+    'Celdas vacías',
+    'En una fila existente, una celda vacía significa "sin cambio": no borra fechas ni responsables.',
+  ],
+  ['Límites', `Máximo ${IMPORT_TEMPLATE_MAX_ROWS} filas y 5 MB`],
+  [
+    'Ejemplos',
+    'La plantilla descargable incluye filas de ejemplo; el export de un proyecto trae sus tareas reales. Puedes borrar las filas de ejemplo o escribir encima',
+  ],
+];
 
 const COLORS = {
   brandDark: 'FF00375A',
@@ -36,132 +161,6 @@ const STATUS_TEXT_COLORS: Record<number, string> = {
 };
 
 const STATUS_ORDER = [0, 1, 2, 3, 4];
-
-type ExampleRow = [
-  string,
-  string,
-  number,
-  string,
-  string,
-  number,
-  string,
-  string,
-];
-
-const EXAMPLE_ROWS: ExampleRow[] = [
-  [
-    'Planificación del día',
-    'Revisar pendientes y priorizar actividades',
-    1,
-    '2026-09-29',
-    '2026-09-29',
-    4,
-    '',
-    '',
-  ],
-  [
-    'Revisar correos',
-    'Responder mensajes pendientes',
-    2,
-    '2026-09-29',
-    '2026-09-29',
-    4,
-    '',
-    '',
-  ],
-  [
-    'Reunión de equipo',
-    'Daily de avance de proyectos',
-    2,
-    '2026-09-29',
-    '2026-09-29',
-    2,
-    '',
-    '',
-  ],
-  [
-    'Desarrollo Inplanner',
-    'Avances de backend y frontend',
-    1,
-    '2026-09-29',
-    '2026-10-15',
-    2,
-    '',
-    '',
-  ],
-  [
-    'Endpoint de importación',
-    'Crear POST /tasks/import',
-    2,
-    '2026-09-30',
-    '2026-10-10',
-    0,
-    '',
-    '',
-  ],
-  [
-    'Parser Excel/CSV',
-    'Leer la plantilla y validar columnas',
-    3,
-    '2026-09-30',
-    '2026-10-05',
-    1,
-    '',
-    '',
-  ],
-  [
-    'Pruebas del parser',
-    'Casos: plano, anidado y vacío',
-    3,
-    '2026-09-30',
-    '2026-10-03',
-    0,
-    '',
-    '',
-  ],
-  [
-    'Documentación',
-    'Actualizar el README del módulo',
-    1,
-    '2026-10-01',
-    '2026-10-08',
-    3,
-    '',
-    '',
-  ],
-];
-
-const INSTRUCTIONS: [string, string][] = [
-  [
-    'Encabezados',
-    'Deben ir en la fila 1 de la hoja "Actividades": Tarea, Descripcion, Nivel, Fecha inicio, Fecha vencimiento, Estado, Responsable, Responsable 2',
-  ],
-  ['Filas vacías', 'Se ignoran automáticamente'],
-  [
-    'Nivel',
-    '1 = actividad, 2 = subtarea, 3 = sub-subtarea. Puedes anidar a más profundidad (4, 5, ...). Vacío = 1',
-  ],
-  [
-    'Fecha inicio',
-    'Formato AAAA-MM-DD (ej. 2026-09-29). También acepta DD/MM/AAAA. Vacío = hoy',
-  ],
-  [
-    'Fecha vencimiento',
-    'Formato AAAA-MM-DD (ej. 2026-10-15). También acepta DD/MM/AAAA. Opcional',
-  ],
-  ['Estado', 'Nombre o número (ver glosario). Vacío = Pendiente'],
-  [
-    'Responsable / Responsable 2',
-    'Elige de la lista (nombre y apellido). Debe existir en el sistema. Vacío = se asigna a quien importa',
-  ],
-  ['Nombres', 'El campo Tarea admite hasta 150 caracteres'],
-  ['Columnas extra', 'Se ignoran'],
-  ['Límites', `Máximo ${IMPORT_TEMPLATE_MAX_ROWS} filas y 2 MB`],
-  [
-    'Ejemplos',
-    'Puedes borrar las filas de ejemplo o escribir tus actividades encima',
-  ],
-];
 
 function solidFill(argb: string): ExcelJS.Fill {
   return { type: 'pattern', pattern: 'solid', fgColor: { argb } };
@@ -184,13 +183,18 @@ function buildUsersSheet(
   for (const name of responsibleNames) {
     sheet.addRow([name]);
   }
-  sheet.getColumn(1).width = 32;
+  sheet.getColumn(1).width = 40;
   // Oculta (no "veryHidden"): Excel no admite validaciones hacia hojas muy ocultas.
   sheet.state = 'hidden';
 }
 
-function buildActivitiesSheet(
+/**
+ * Escribe la hoja de actividades con el formato exacto que consume el parser.
+ * La usan tanto la plantilla vacía como el export de un proyecto.
+ */
+export function writeActivitiesSheet(
   workbook: ExcelJS.Workbook,
+  rows: ImportTemplateRow[],
   responsibleNames: string[],
 ): void {
   const sheet = workbook.addWorksheet(IMPORT_SHEET_NAME);
@@ -208,13 +212,14 @@ function buildActivitiesSheet(
     {
       header: IMPORT_TEMPLATE_HEADERS.responsible,
       key: 'responsible',
-      width: 28,
+      width: 32,
     },
     {
       header: IMPORT_TEMPLATE_HEADERS.responsible2,
       key: 'responsible2',
-      width: 28,
+      width: 32,
     },
+    { header: IMPORT_TEMPLATE_HEADERS.id, key: 'id', width: 10 },
   ];
 
   const headerRow = sheet.getRow(1);
@@ -227,63 +232,54 @@ function buildActivitiesSheet(
   });
   sheet.views = [{ state: 'frozen', ySplit: 1 }];
 
-  EXAMPLE_ROWS.forEach(
-    (
-      [
-        name,
-        description,
-        level,
-        startDate,
-        dueDate,
-        status,
-        responsible,
-        responsible2,
-      ],
-      index,
-    ) => {
-      const row = sheet.addRow([
-        name,
-        description,
-        level,
-        startDate,
-        dueDate,
-        TASK_STATUS_LABELS[status],
-        responsible,
-        responsible2,
-      ]);
-      const zebra = index % 2 === 1 ? COLORS.zebra : undefined;
-      row.eachCell({ includeEmpty: true }, (cell) => {
-        cell.border = thinBorder();
-        if (zebra) cell.fill = solidFill(zebra);
-      });
-      row.getCell(1).alignment = {
-        indent: Math.max(0, level - 1),
-        vertical: 'middle',
-      };
-      row.getCell(3).alignment = { horizontal: 'center' };
-      row.getCell(4).alignment = { horizontal: 'center' };
-      row.getCell(5).alignment = { horizontal: 'center' };
-      const statusCell = row.getCell(6);
-      statusCell.alignment = { horizontal: 'center' };
-      statusCell.font = {
-        bold: true,
-        color: { argb: STATUS_TEXT_COLORS[status] ?? COLORS.brandDark },
-      };
-    },
-  );
+  rows.forEach((data, index) => {
+    const row = sheet.addRow([
+      data.name,
+      data.description ?? '',
+      data.level,
+      data.startDate ?? '',
+      data.dueDate ?? '',
+      TASK_STATUS_LABELS[data.status] ?? String(data.status),
+      data.responsible ?? '',
+      data.responsible2 ?? '',
+      data.id ?? '',
+    ]);
+    const zebra = index % 2 === 1 ? COLORS.zebra : undefined;
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.border = thinBorder();
+      if (zebra) cell.fill = solidFill(zebra);
+    });
+    row.getCell(1).alignment = {
+      indent: Math.max(0, data.level - 1),
+      vertical: 'middle',
+    };
+    row.getCell(3).alignment = { horizontal: 'center' };
+    row.getCell(4).alignment = { horizontal: 'center' };
+    row.getCell(5).alignment = { horizontal: 'center' };
+    row.getCell(9).alignment = { horizontal: 'center' };
+    const statusCell = row.getCell(6);
+    statusCell.alignment = { horizontal: 'center' };
+    statusCell.font = {
+      bold: true,
+      color: { argb: STATUS_TEXT_COLORS[data.status] ?? COLORS.brandDark },
+    };
+  });
 
   const lastRow = IMPORT_TEMPLATE_MAX_ROWS + 1;
   const statusList = STATUS_ORDER.map((s) => TASK_STATUS_LABELS[s]).join(',');
   const validations = sheet as unknown as {
     dataValidations: { add(range: string, rule: unknown): void };
   };
+  // Nivel: entero >= 1. Se usa validación numérica (no lista) para permitir
+  // profundidades mayores a 3, que también puede generar el export.
   validations.dataValidations.add(`C2:C${lastRow}`, {
-    type: 'list',
+    type: 'whole',
+    operator: 'greaterThanOrEqual',
     allowBlank: true,
-    formulae: ['"1,2,3"'],
+    formulae: [1],
     showErrorMessage: true,
     errorTitle: 'Nivel inválido',
-    error: 'Usa 1, 2 o 3',
+    error: 'Usa un número entero mayor o igual a 1',
   });
   validations.dataValidations.add(`F2:F${lastRow}`, {
     type: 'list',
@@ -314,7 +310,7 @@ function buildInstructionsSheet(workbook: ExcelJS.Workbook): void {
   const sheet = workbook.addWorksheet(IMPORT_INSTRUCTIONS_SHEET_NAME);
   sheet.columns = [
     { header: 'Regla', key: 'rule', width: 22 },
-    { header: 'Detalle', key: 'detail', width: 80 },
+    { header: 'Detalle', key: 'detail', width: 90 },
   ];
 
   const headerRow = sheet.getRow(1);
@@ -353,11 +349,26 @@ function buildInstructionsSheet(workbook: ExcelJS.Workbook): void {
 export function buildImportTemplateWorkbook(
   responsibleNames: string[] = [],
 ): ExcelJS.Workbook {
+  return buildWorkbook(SAMPLE_ROWS, responsibleNames);
+}
+
+/** Workbook de export: mismas hojas y formato, pero con las tareas del proyecto. */
+export function buildProjectExportWorkbook(
+  rows: ImportTemplateRow[],
+  responsibleNames: string[] = [],
+): ExcelJS.Workbook {
+  return buildWorkbook(rows, responsibleNames);
+}
+
+function buildWorkbook(
+  rows: ImportTemplateRow[],
+  responsibleNames: string[],
+): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Inplanner';
   workbook.created = new Date();
 
-  buildActivitiesSheet(workbook, responsibleNames);
+  writeActivitiesSheet(workbook, rows, responsibleNames);
   buildInstructionsSheet(workbook);
   if (responsibleNames.length > 0) {
     buildUsersSheet(workbook, responsibleNames);
@@ -370,5 +381,13 @@ export async function buildImportTemplateBuffer(
   responsibleNames: string[] = [],
 ): Promise<Buffer> {
   const workbook = buildImportTemplateWorkbook(responsibleNames);
+  return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
+}
+
+export async function buildProjectExportBuffer(
+  rows: ImportTemplateRow[],
+  responsibleNames: string[] = [],
+): Promise<Buffer> {
+  const workbook = buildProjectExportWorkbook(rows, responsibleNames);
   return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
 }

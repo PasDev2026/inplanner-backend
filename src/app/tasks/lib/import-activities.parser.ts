@@ -5,6 +5,7 @@ import { TASK_STATUS_LABELS } from '../../reports/constants/report.constants';
 import { IMPORT_SHEET_NAME, IMPORT_TEMPLATE_MAX_ROWS } from './import-template';
 
 export const ACTIVITY_HEADER_ALIASES = {
+  id: ['id', 'id tarea', 'id_tarea'],
   name: ['tarea', 'nombre'],
   description: ['descripcion', 'detalle'],
   level: ['nivel'],
@@ -34,6 +35,8 @@ export interface ImportRowError {
 
 export interface ParsedActivityRow {
   numeroFila: number;
+  /** ID de la tarea existente (columna ID del export). Vacío = tarea nueva. */
+  existing_task_id?: number;
   task_name: string;
   task_description?: string;
   nivel: number;
@@ -185,6 +188,14 @@ function validateRow(row: RawRow): ImportRowError | null {
     );
   }
 
+  const rawId = pick(row.data, ACTIVITY_HEADER_ALIASES.id);
+  if (rawId !== '') {
+    const id = Number(rawId);
+    if (!Number.isInteger(id) || id <= 0) {
+      problemas.push('ID inválido: usa un número entero mayor a 0');
+    }
+  }
+
   const rawLevel = pick(row.data, ACTIVITY_HEADER_ALIASES.level);
   if (rawLevel !== '') {
     const level = Number.parseInt(rawLevel, 10);
@@ -238,9 +249,11 @@ export function parseActivityRows(rows: RawRow[]): ParseActivitiesResult {
       row.data,
       ACTIVITY_HEADER_ALIASES.responsible2,
     );
+    const rawId = pick(row.data, ACTIVITY_HEADER_ALIASES.id);
     const description = pick(row.data, ACTIVITY_HEADER_ALIASES.description);
     filas.push({
       numeroFila: row.numeroFila,
+      existing_task_id: rawId === '' ? undefined : Number.parseInt(rawId, 10),
       task_name: pick(row.data, ACTIVITY_HEADER_ALIASES.name),
       task_description: description || undefined,
       nivel: rawLevel === '' ? 1 : Number.parseInt(rawLevel, 10),

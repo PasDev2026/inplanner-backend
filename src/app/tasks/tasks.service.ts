@@ -11,6 +11,10 @@ import { RemoveAssignmentUseCase } from './use-cases/remove-assignment.use-case'
 import { FindChildrenUseCase } from './use-cases/find-children.use-case';
 import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
 import { ImportTasksUseCase } from './use-cases/import-tasks.use-case';
+import {
+  ExportProjectTasksUseCase,
+  ProjectTasksExport,
+} from './use-cases/export-project-tasks.use-case';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 import { QueryTaskDto } from './dtos/query-task.dto';
@@ -19,7 +23,9 @@ import { UpdateTaskStatusDto } from './dtos/update-task-status.dto';
 import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
 import { ImportTasksDto } from './dtos/import-tasks.dto';
 import { ImportPreviewDto } from './dtos/response/import-preview.dto';
+import { ImportResultDto } from './dtos/response/import-result.dto';
 import { TaskResponseDto } from './dtos/response/task-response.dto';
+import type { JwtPayload } from '../auth/interfaces/auth-types';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 
 @Injectable()
@@ -37,6 +43,7 @@ export class TasksService {
     private readonly findChildrenUseCase: FindChildrenUseCase,
     private readonly reorderTasksUseCase: ReorderTasksUseCase,
     private readonly importTasksUseCase: ImportTasksUseCase,
+    private readonly exportProjectTasksUseCase: ExportProjectTasksUseCase,
   ) {}
 
   async create(
@@ -106,9 +113,8 @@ export class TasksService {
     dto: ImportTasksDto,
     file: Express.Multer.File,
     userId: string,
-  ): Promise<TaskResponseDto[]> {
-    const tasks = await this.importTasksUseCase.execute(dto, file, userId);
-    return TaskResponseDto.fromEntityList(tasks);
+  ): Promise<ImportResultDto> {
+    return this.importTasksUseCase.execute(dto, file, userId);
   }
 
   preview(
@@ -120,5 +126,12 @@ export class TasksService {
 
   getImportTemplate(): Promise<Buffer> {
     return this.importTasksUseCase.getTemplate();
+  }
+
+  exportProject(
+    projectId: number,
+    user: JwtPayload,
+  ): Promise<ProjectTasksExport> {
+    return this.exportProjectTasksUseCase.execute(projectId, user);
   }
 }

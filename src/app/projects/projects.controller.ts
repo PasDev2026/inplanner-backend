@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -18,19 +19,27 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ProjectsService } from './projects.service';
+import { TasksService } from '../tasks/tasks.service';
 import { CreateProjectDto } from './dtos/create-project.dto';
 import { UpdateProjectDto } from './dtos/update-project.dto';
 import { QueryProjectDto } from './dtos/query-project.dto';
 import { CreateProjectResponsibleDto } from './dtos/create-project-responsible.dto';
 import { ReorderProjectDto } from './dtos/reorder-projects.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipTransform } from '../../common/decorators/skip-transform.decorator';
 import type { JwtPayload } from '../auth/interfaces/auth-types';
+
+const EXCEL_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 @ApiTags('Proyectos')
 @ApiBearerAuth('access-token')
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly tasksService: TasksService,
+  ) {}
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -63,6 +72,35 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Lista de proyectos para Kanban' })
   findKanban(@Query() query: QueryProjectDto, @CurrentUser() user: JwtPayload) {
     return this.projectsService.findKanban(query, user);
+  }
+
+  @Get(':id/tasks/export')
+  @SkipTransform()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Exportar tareas del proyecto',
+    description:
+      'Descarga un Excel con todas las tareas del proyecto en el formato de la plantilla de importación, incluyendo la columna ID para poder reimportarlo sin duplicar.',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'ID del proyecto' })
+  @ApiResponse({ status: 200, description: 'Archivo Excel' })
+  @ApiResponse({ status: 404, description: 'Proyecto no encontrado' })
+  @ApiResponse({
+    status: 403,
+    description: 'El usuario no es manager del proyecto ni superadmin',
+  })
+  async exportTasks(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<StreamableFile> {
+    const { buffer, filename } = await this.tasksService.exportProject(
+      id,
+      user,
+    );
+    return new StreamableFile(buffer, {
+      type: EXCEL_MIME_TYPE,
+      disposition: `attachment; filename="${filename}"`,
+    });
   }
 
   @Get(':id')

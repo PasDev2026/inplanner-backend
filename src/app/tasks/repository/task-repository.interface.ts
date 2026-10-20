@@ -10,7 +10,12 @@ export interface ITaskRepository {
   save(task: TaskEntity, manager?: EntityManager): Promise<TaskEntity>;
   findWithPagination(query: QueryTaskDto): Promise<PaginatedResult<TaskEntity>>;
   findOneById(id: number): Promise<TaskEntity | null>;
-  update(id: number, partial: Partial<TaskEntity>): Promise<void>;
+  findByProjectWithAssignments(projectId: number): Promise<TaskEntity[]>;
+  update(
+    id: number,
+    partial: Partial<TaskEntity>,
+    manager?: EntityManager,
+  ): Promise<void>;
   delete(task: TaskEntity): Promise<void>;
   findChildren(parentId: number): Promise<TaskEntity[]>;
   cascadeStatus(parentId: number, status: number): Promise<void>;

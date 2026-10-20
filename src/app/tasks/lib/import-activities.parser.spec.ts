@@ -163,6 +163,28 @@ describe('parseActivityRows', () => {
     expect(result.filas[0].responsables).toEqual(['Ana López', 'Luis Gómez']);
     expect(result.filas[1].responsables).toEqual(['Pedro Díaz']);
   });
+
+  it('lee la columna ID y rechaza IDs inválidos', () => {
+    const result = parseActivityRows([
+      row(2, { tarea: 'Existente', id: '101' }),
+      row(3, { tarea: 'Nueva', id: '' }),
+      row(4, { tarea: 'ID cero', id: '0' }),
+      row(5, { tarea: 'ID texto', id: 'abc' }),
+    ]);
+
+    expect(result.filas[0].existing_task_id).toBe(101);
+    expect(result.filas[1].existing_task_id).toBeUndefined();
+    expect(result.errores).toEqual([
+      {
+        numeroFila: 4,
+        mensaje: 'ID inválido: usa un número entero mayor a 0',
+      },
+      {
+        numeroFila: 5,
+        mensaje: 'ID inválido: usa un número entero mayor a 0',
+      },
+    ]);
+  });
 });
 
 describe('resolveHierarchy', () => {

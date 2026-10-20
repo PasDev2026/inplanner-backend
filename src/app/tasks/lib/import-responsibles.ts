@@ -3,6 +3,12 @@
  * el Excel (ej. "Juan Pérez, Ana López") a UUIDs de usuarios existentes, y
  * genera la lista de nombres válidos para el desplegable de la plantilla.
  *
+ * Se usa el nombre completo (nombre + apellidos) para maximizar la
+ * desambiguación. Si dos usuarios comparten exactamente el mismo nombre
+ * completo, se agrega el número de documento (o email/id como respaldo) entre
+ * paréntesis, de modo que el valor exportado siempre se pueda volver a
+ * importar sin ambigüedad.
+ *
  * Lógica pura (sin BD) para poder testearla aisladamente.
  */
 
@@ -11,6 +17,9 @@ export interface ResponsibleUser {
   name: string;
   apellido_paterno?: string | null;
   apellido_materno?: string | null;
+  numero_documento?: string | null;
+  email?: string | null;
+  estado?: boolean;
 }
 
 export interface ResponsibleResolver {
@@ -33,23 +42,78 @@ export function normalizePersonName(value: string): string {
     .replace(/\s+/g, ' ');
 }
 
-/** Nombre visible de un usuario: "Nombre ApellidoPaterno". */
-function displayName(user: ResponsibleUser): string {
-  return `${user.name ?? ''} ${user.apellido_paterno ?? ''}`.trim();
+/** Nombre completo visible: "Nombre ApellidoPaterno ApellidoMaterno". */
+export function fullName(user: ResponsibleUser): string {
+  return [user.name, user.apellido_paterno, user.apellido_materno]
+    .map((part) => String(part ?? '').trim())
+    .filter(Boolean)
+    .join(' ');
 }
 
-/** Claves de búsqueda válidas para un usuario (nombre + apellidos). */
+/** Discriminador único para usuarios con el mismo nombre completo. */
+function disambiguator(user: ResponsibleUser): string {
+  return (
+    String(user.numero_documento ?? '').trim() ||
+    String(user.email ?? '').trim() ||
+    String(user.id_user ?? '').trim()
+  );
+}
+
+/**
+ * Etiqueta única por usuario. Si dos usuarios comparten el mismo nombre
+ * completo, ambos se etiquetan con su discriminador para que el Excel no sea
+ * ambiguo al reimportar.
+ */
+export function buildResponsibleLabels(
+  users: ResponsibleUser[],
+): Map<string, string> {
+  const byFullName = new Map<string, ResponsibleUser[]>();
+
+  for (const user of users) {
+    const name = fullName(user);
+    const key = normalizePersonName(name);
+    if (!key) continue;
+    const group = byFullName.get(key) ?? [];
+    group.push(user);
+    byFullName.set(key, group);
+  }
+
+  const labels = new Map<string, string>();
+  for (const group of byFullName.values()) {
+    if (group.length === 1) {
+      labels.set(group[0].id_user, fullName(group[0]));
+      continue;
+    }
+
+    for (const user of group) {
+      const suffix = disambiguator(user);
+      labels.set(
+        user.id_user,
+        suffix ? `${fullName(user)} (${suffix})` : fullName(user),
+      );
+    }
+  }
+
+  return labels;
+}
+
+/** Claves de búsqueda válidas para un usuario (nombre corto y completo). */
 function nameKeys(user: ResponsibleUser): string[] {
   const name = normalizePersonName(user.name ?? '');
   const paterno = normalizePersonName(user.apellido_paterno ?? '');
-  const materno = normalizePersonName(user.apellido_materno ?? '');
+  const full = normalizePersonName(fullName(user));
   const keys: string[] = [];
 
+  if (full) keys.push(full);
   if (name && paterno) keys.push(`${name} ${paterno}`);
-  if (name && paterno && materno) keys.push(`${name} ${paterno} ${materno}`);
   if (name && !paterno) keys.push(name);
 
-  return keys;
+  const suffix = disambiguator(user);
+  if (full && suffix) {
+    keys.push(normalizePersonName(`${fullName(user)} (${suffix})`));
+  }
+
+  return [...new Set(keys)];
 }
 
 /** Distancia de Levenshtein (para sugerencias). */
@@ -75,25 +139,19 @@ function levenshtein(a: string, b: string): number {
 }
 
 /**
- * Lista de nombres válidos para el desplegable: "Nombre ApellidoPaterno",
- * sin duplicados y excluyendo los que sean ambiguos (mismo nombre para más de
- * un usuario). Ordenada alfabéticamente.
+ * Lista de etiquetas válidas para el desplegable, sin duplicados y ordenada.
+ * Incluye a los usuarios con nombre completo repetido usando su documento.
  */
 export function listResponsibleNames(users: ResponsibleUser[]): string[] {
-  const counts = new Map<string, number>();
-  const display = new Map<string, string>();
+  const labels = buildResponsibleLabels(users);
+  const names = new Set<string>();
 
   for (const user of users) {
-    const key = normalizePersonName(displayName(user));
-    if (!key) continue;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-    if (!display.has(key)) display.set(key, displayName(user));
+    const label = labels.get(user.id_user);
+    if (label) names.add(label);
   }
 
-  return [...display.entries()]
-    .filter(([key]) => counts.get(key) === 1)
-    .map(([, name]) => name)
-    .sort((a, b) => a.localeCompare(b, 'es'));
+  return [...names].sort((a, b) => a.localeCompare(b, 'es'));
 }
 
 /**
@@ -104,18 +162,17 @@ export function listResponsibleNames(users: ResponsibleUser[]): string[] {
 export function buildResponsibleResolver(
   users: ResponsibleUser[],
 ): ResponsibleResolver {
+  const labels = buildResponsibleLabels(users);
   const byKey = new Map<string, Set<string>>();
   const displayByKey = new Map<string, string>();
 
   for (const user of users) {
+    const label = labels.get(user.id_user) ?? fullName(user);
     for (const key of nameKeys(user)) {
       const ids = byKey.get(key) ?? new Set<string>();
       ids.add(user.id_user);
       byKey.set(key, ids);
-    }
-    const primary = normalizePersonName(displayName(user));
-    if (primary && !displayByKey.has(primary)) {
-      displayByKey.set(primary, displayName(user));
+      if (!displayByKey.has(key)) displayByKey.set(key, label);
     }
   }
 

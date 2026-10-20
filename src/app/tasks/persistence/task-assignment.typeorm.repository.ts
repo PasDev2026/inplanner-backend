@@ -39,6 +39,23 @@ export class TaskAssignmentTypeormRepository implements ITaskAssignmentRepositor
     });
   }
 
+  async replaceForTask(
+    taskId: number,
+    userIds: string[],
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(TaskAssignmentEntity)
+      : this.repo;
+    await repo.delete({ task_id: taskId });
+
+    const uniqueIds = [...new Set(userIds)].filter(Boolean);
+    if (uniqueIds.length === 0) return;
+    await repo.save(
+      uniqueIds.map((user_id) => repo.create({ task_id: taskId, user_id })),
+    );
+  }
+
   async delete(assignment: TaskAssignmentEntity): Promise<void> {
     await this.repo.remove(assignment);
   }
