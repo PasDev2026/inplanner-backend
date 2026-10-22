@@ -16,7 +16,12 @@ export class AuthCentralizadoService {
     const env = await this.http.post<LoginDto, CentralizadoEnvelope<TokenData>>(
       '/auth/login',
       payload,
-      { extraHeaders: { 'X-Country-Code': paisCodigo } },
+      {
+        extraHeaders: {
+          'X-Country-Code': paisCodigo,
+          'X-System': 'INPLANNER',
+        },
+      },
     );
     return env.data;
   }
@@ -25,7 +30,9 @@ export class AuthCentralizadoService {
     const env = await this.http.post<
       { refresh_token: string },
       CentralizadoEnvelope<TokenData>
-    >('/auth/refresh', payload);
+    >('/auth/refresh', payload, {
+      extraHeaders: { 'X-System': 'INPLANNER' },
+    });
     return env.data;
   }
 

@@ -14,6 +14,8 @@ export interface JwtPayload {
   sexo: string | null;
   fecha_nacimiento: string | null;
   tipo: 'TRABAJADOR' | 'PACIENTE';
+  /** Sistema que emitió el token (INSALUD, INPLANNER, PORTAL, CENTRALIZADO). */
+  sistema?: string;
   pais_codigo: string;
   sede_activa: UserSede;
   otras_sedes: UserSede[];
