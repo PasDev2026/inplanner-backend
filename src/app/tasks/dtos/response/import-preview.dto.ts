@@ -8,7 +8,9 @@ import type { ImportRowError } from '../../lib/import-activities.parser';
 
 export class ImportPreviewRowDto {
   numeroFila: number;
+  existing_task_id?: number;
   task_name: string;
+  task_description?: string;
   nivel: number;
   start_date?: string;
   due_date?: string;
@@ -47,7 +49,9 @@ export class ImportPreviewDto {
       .filter(({ plan }) => !source.filasConError.has(plan.row.numeroFila))
       .map(({ plan, nivel }) => ({
         numeroFila: plan.row.numeroFila,
+        existing_task_id: plan.row.existing_task_id,
         task_name: plan.row.task_name,
+        task_description: plan.row.task_description,
         nivel: nivel ?? plan.row.nivel,
         start_date: plan.row.start_date,
         due_date: plan.row.due_date,
