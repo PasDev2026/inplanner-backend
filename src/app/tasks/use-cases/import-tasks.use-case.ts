@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -17,6 +18,11 @@ import { UserEntity } from '../../users/entities/user.entity';
 import { ImportTasksDto } from '../dtos/import-tasks.dto';
 import { ImportPreviewDto } from '../dtos/response/import-preview.dto';
 import { ImportResultDto } from '../dtos/response/import-result.dto';
+import type { JwtPayload } from '../../auth/interfaces/auth-types';
+import {
+  canAccessProjectActivities,
+  isProjectResponsible,
+} from '../../projects/lib/project-access';
 import {
   ImportRowError,
   ParsedActivityRow,
@@ -63,8 +69,9 @@ export class ImportTasksUseCase {
   async preview(
     dto: ImportTasksDto,
     file: Express.Multer.File,
+    user: JwtPayload,
   ): Promise<ImportPreviewDto> {
-    const analysis = await this.analyze(dto, file);
+    const analysis = await this.analyze(dto, file, user);
     return ImportPreviewDto.from({
       plans: analysis.plans,
       nivelesEfectivos: analysis.nivelesEfectivos,
@@ -82,9 +89,9 @@ export class ImportTasksUseCase {
   async execute(
     dto: ImportTasksDto,
     file: Express.Multer.File,
-    userId: string,
+    user: JwtPayload,
   ): Promise<ImportResultDto> {
-    const analysis = await this.analyze(dto, file);
+    const analysis = await this.analyze(dto, file, user);
     if (analysis.errors.length > 0) {
       throw new BadRequestException(this.formatErrors(analysis.errors));
     }
@@ -129,7 +136,7 @@ export class ImportTasksUseCase {
               due_date: row.due_date,
               status: row.estado,
             },
-            userId,
+            user.sub,
             em,
             // Si la fila define responsables, estos reemplazan al que importa.
             { assignCreator: responsibleIds.length === 0 },
@@ -220,8 +227,9 @@ export class ImportTasksUseCase {
   private async analyze(
     dto: ImportTasksDto,
     file: Express.Multer.File,
+    user: JwtPayload,
   ): Promise<ImportAnalysis> {
-    await this.validateTarget(dto);
+    await this.validateTarget(dto, user);
 
     const parsed = await parseActivitiesWorkbook(
       file.buffer,
@@ -368,13 +376,27 @@ export class ImportTasksUseCase {
     );
   }
 
-  private async validateTarget(dto: ImportTasksDto): Promise<void> {
+  private async validateTarget(
+    dto: ImportTasksDto,
+    user: JwtPayload,
+  ): Promise<void> {
     const project = await this.dataSource.getRepository(ProjectEntity).findOne({
       where: { id_project: dto.project_id },
-      select: { id_project: true },
+      select: { id_project: true, manager_id: true },
     });
     if (!project) {
       throw new NotFoundException('Proyecto no encontrado');
+    }
+
+    const isResponsible = await isProjectResponsible(
+      this.dataSource,
+      dto.project_id,
+      user.sub,
+    );
+    if (!canAccessProjectActivities(project, user, isResponsible)) {
+      throw new ForbiddenException(
+        'No tienes permiso para importar en este proyecto',
+      );
     }
 
     if (dto.parent_task_id === undefined) return;

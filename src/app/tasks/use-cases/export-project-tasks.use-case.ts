@@ -11,7 +11,10 @@ import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import type { TaskEntity } from '../entities/task.entity';
 import type { JwtPayload } from '../../auth/interfaces/auth-types';
-import { isSuperAdmin } from '../../../common/helpers/user-auth.helper';
+import {
+  canAccessProjectActivities,
+  isProjectResponsible,
+} from '../../projects/lib/project-access';
 import {
   ResponsibleUser,
   buildResponsibleLabels,
@@ -44,7 +47,13 @@ export class ExportProjectTasksUseCase {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    if (!isSuperAdmin(user) && project.manager_id !== user.sub) {
+    if (
+      !canAccessProjectActivities(
+        project,
+        user,
+        await isProjectResponsible(this.dataSource, projectId, user.sub),
+      )
+    ) {
       throw new ForbiddenException(
         'No tienes permiso para exportar este proyecto',
       );

@@ -112,16 +112,17 @@ export class TasksService {
   async import(
     dto: ImportTasksDto,
     file: Express.Multer.File,
-    userId: string,
+    user: JwtPayload,
   ): Promise<ImportResultDto> {
-    return this.importTasksUseCase.execute(dto, file, userId);
+    return this.importTasksUseCase.execute(dto, file, user);
   }
 
   preview(
     dto: ImportTasksDto,
     file: Express.Multer.File,
+    user: JwtPayload,
   ): Promise<ImportPreviewDto> {
-    return this.importTasksUseCase.preview(dto, file);
+    return this.importTasksUseCase.preview(dto, file, user);
   }
 
   getImportTemplate(): Promise<Buffer> {

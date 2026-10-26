@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ExportProjectTasksUseCase } from './export-project-tasks.use-case';
 import { ProjectEntity } from '../../projects/entities/project.entity';
+import { ProjectResponsibleEntity } from '../../projects/entities/project-responsible.entity';
 import type { ITaskRepository } from '../repository/task-repository.interface';
 import type { JwtPayload, UserSede } from '../../auth/interfaces/auth-types';
 
@@ -36,7 +37,10 @@ function user(sub: string, role = 'PERSONAL'): JwtPayload {
   };
 }
 
-function buildUseCase(project: ProjectEntity | null = PROJECT) {
+function buildUseCase(
+  project: ProjectEntity | null = PROJECT,
+  responsibleUserId: string | null = null,
+) {
   const taskRepo = {
     findByProjectWithAssignments: jest.fn().mockResolvedValue([]),
   } as unknown as ITaskRepository;
@@ -47,10 +51,22 @@ function buildUseCase(project: ProjectEntity | null = PROJECT) {
   const userRepo = {
     find: jest.fn().mockResolvedValue([]),
   };
+  const responsibleRepo = {
+    findOne: jest
+      .fn()
+      .mockImplementation(
+        ({ where }: { where: { project_id: number; user_id: string } }) =>
+          responsibleUserId === where.user_id
+            ? { project_id: where.project_id, user_id: where.user_id }
+            : null,
+      ),
+  };
   const dataSource = {
-    getRepository: jest.fn((entity: unknown) =>
-      entity === ProjectEntity ? projectRepo : userRepo,
-    ),
+    getRepository: jest.fn((entity: unknown) => {
+      if (entity === ProjectEntity) return projectRepo;
+      if (entity === ProjectResponsibleEntity) return responsibleRepo;
+      return userRepo;
+    }),
   } as unknown as DataSource;
 
   return new ExportProjectTasksUseCase(taskRepo, dataSource);
@@ -73,9 +89,24 @@ describe('ExportProjectTasksUseCase', () => {
     expect(result.buffer).toBeInstanceOf(Buffer);
   });
 
+  it('exporta cuando el usuario es responsable del proyecto', async () => {
+    const result = await buildUseCase(PROJECT, 'responsable-1').execute(
+      1,
+      user('responsable-1'),
+    );
+
+    expect(result.buffer).toBeInstanceOf(Buffer);
+  });
+
   it('rechaza a un usuario que no es manager ni superadmin', async () => {
     await expect(
       buildUseCase().execute(1, user('otro-usuario')),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rechaza a un usuario que no es responsable del proyecto', async () => {
+    await expect(
+      buildUseCase(PROJECT, 'responsable-1').execute(1, user('otro-usuario')),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 

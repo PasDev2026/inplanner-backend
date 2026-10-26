@@ -37,6 +37,7 @@ import { ReorderTaskDto } from './dtos/reorder-tasks.dto';
 import { ImportTasksDto } from './dtos/import-tasks.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SkipTransform } from '../../common/decorators/skip-transform.decorator';
+import type { JwtPayload } from '../auth/interfaces/auth-types';
 import { IMPORT_TEMPLATE_MAX_BYTES } from './lib/import-template';
 
 const IMPORT_ALLOWED_EXTENSIONS = ['.xlsx', '.csv'];
@@ -117,16 +118,20 @@ export class TasksController {
     status: 404,
     description: 'Proyecto o tarea padre no encontrada',
   })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permiso para importar en el proyecto',
+  })
   @UseInterceptors(importFileInterceptor())
   import(
     @Body() dto: ImportTasksDto,
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser('sub') userId: string,
+    @CurrentUser() user: JwtPayload,
   ) {
     if (!file) {
       throw new BadRequestException('Archivo requerido');
     }
-    return this.tasksService.import(dto, file, userId);
+    return this.tasksService.import(dto, file, user);
   }
 
   @Post('import/preview')
@@ -157,15 +162,20 @@ export class TasksController {
     description: 'Resultado del análisis del archivo',
   })
   @ApiResponse({ status: 400, description: 'Archivo inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permiso para importar en el proyecto',
+  })
   @UseInterceptors(importFileInterceptor())
   previewImport(
     @Body() dto: ImportTasksDto,
     @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: JwtPayload,
   ) {
     if (!file) {
       throw new BadRequestException('Archivo requerido');
     }
-    return this.tasksService.preview(dto, file);
+    return this.tasksService.preview(dto, file, user);
   }
 
   @Get('import/template')
